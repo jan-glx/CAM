@@ -4,15 +4,14 @@ function(scoreMat, X, scoreName, i, j, scoreNodes, Adj, output, numCores, maxNum
 {
     p <- dim(X)[2]
     existingParOfJ <- which(Adj[,j] == 1)
-    notAllowedParOfJ <- setdiff(which(scoreMat[,j] == -Inf), c(existingParOfJ,j))
-    
+    notAllowedParOfJ <- which(scoreMat[,j] == -Inf)
     # if there is something left that we need to update
-    if(length(existingParOfJ) + length(notAllowedParOfJ) < p-1)
+    if(length(notAllowedParOfJ) < p)
     {
         # update column for j
         rowParents <- matrix(c(existingParOfJ,NA), p, length(existingParOfJ)+1, byrow = TRUE)
         rowParents[,length(existingParOfJ)+1] <- 1:p
-        toUpdate <- setdiff(1:p,c(j,existingParOfJ,notAllowedParOfJ))
+        toUpdate <- setdiff(1:p,notAllowedParOfJ)
         if(length(existingParOfJ)< maxNumParents)
         {
             if(numCores == 1)

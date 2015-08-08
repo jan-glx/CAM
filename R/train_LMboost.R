@@ -6,9 +6,9 @@ function(X,y,pars = list()) #
     y <- y - rep( mean(y), length(y))
     
     yy <- as.vector(y)
-    options(warn=-1)
+    op <- options(warn=-1)
+    on.exit(options(op))
     gb <- glmboost(X,yy, center = TRUE)
-    options(warn=1)
     
     result <- list()
     result$Yfit <- gb$fitted()

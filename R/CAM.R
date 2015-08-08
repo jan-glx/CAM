@@ -26,9 +26,9 @@ function(X, scoreName = "SEMGAM",
     timeMax <- 0
     
     # we record how the score develops 
-    scoreVec <- integer(0)
+    scoreVec <- c()
     # and which edges are added
-    edgeList <- integer(0)
+    edgeList <- c()
     
     # this counter is only used if output = TRUE
     counterUpdate <- 0
@@ -111,7 +111,6 @@ function(X, scoreName = "SEMGAM",
         # Find the best edge
         ptm <- proc.time()[3]
         ix_max <- arrayInd(which.max(computeScoreMatTmp$scoreMat), dim(computeScoreMatTmp$scoreMat))
-        ix_max_backward <- matrix(c(ix_max[2],ix_max[1]),1,2)
                 
         timeMax <- timeMax + proc.time()[3] - ptm
         Adj[ix_max] <- 1
@@ -126,12 +125,11 @@ function(X, scoreName = "SEMGAM",
         
         # Avoid cycles
         ptm <- proc.time()[3]
-        pathMatrix[ix_max[1],ix_max[2]] <- 1
+        pathMatrix[ix_max] <- 1
         DescOfNewChild <- which(pathMatrix[ix_max[2],]==1)
         AncOfNewParent <- which(pathMatrix[,ix_max[1]]==1)
         pathMatrix[AncOfNewParent,DescOfNewChild] <- 1
         computeScoreMatTmp$scoreMat[t(pathMatrix) == 1] <- -Inf 
-        computeScoreMatTmp$scoreMat[ix_max[2],ix_max[1]] <- -Inf
         timeCycle <- timeCycle + proc.time()[3] - ptm
         
         # Record the score of the current graph

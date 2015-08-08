@@ -1,2 +1,2 @@
-import(glmnet,mboost,mgcv,parallel,Matrix)
+import(glmnet, mboost, Matrix, parallel, mgcv, data.table)
 export(CAM,computeScoreMat,computeScoreMatParallel,updateScoreMat,selGam,selGamBoost,selLasso,selLm,selLmBoost)
