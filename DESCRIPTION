@@ -13,3 +13,4 @@ Packaged: 2015-03-05 17:14:16 UTC; jopeters
 NeedsCompilation: no
 Repository: CRAN
 Date/Publication: 2015-03-05 22:01:05
+Suggests: testthat
