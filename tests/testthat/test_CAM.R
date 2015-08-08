@@ -1,6 +1,7 @@
 library(CAM)
 
 test_that("simple example works", {
+  set.seed(1)
   n <- 500
   eps1<-rnorm(n)
   eps2<-rnorm(n)
@@ -22,13 +23,8 @@ test_that("simple example works", {
   ## 0 0 0 1
   ## 0 0 0 0
   
-  estDAG <- CAM(X, scoreName = "SEMGAM", numCores = 1, output = T, variableSel = T, 
+  estDAG <- CAM(X, scoreName = "SEMGAM", numCores = 1, output = F, variableSel = T, 
                 pruning = TRUE, pruneMethod = selGam, pruneMethodPars = list(cutOffPVal = 0.001))
   
-  cat("true DAG:\n")
-  show(trueDAG)
-  
-  cat("estimated DAG:\n")
-  show(estDAG$Adj)
   expect_equal(trueDAG,estDAG$Adj)
 })
