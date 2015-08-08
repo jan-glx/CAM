@@ -3,7 +3,8 @@ function(X, scoreName = "SEMGAM",
                           parsScore = list(numBasisFcts=10), 
                           numCores = 1, 
                           maxNumParents = min(dim(X)[2] - 1, round(dim(X)[1]/20)),
-                          output = FALSE, 
+                          output = FALSE,
+                          fixedOrders = matrix(ncol=2,nrow=0),
                           variableSel = FALSE, 
                           variableSelMethod = selGamBoost, 
                           variableSelMethodPars = list(atLeastThatMuchSelected = 0.02, atMostThatManyNeighbors = 10),
@@ -13,6 +14,17 @@ function(X, scoreName = "SEMGAM",
                           intervData = FALSE, 
                           intervMat = NA) 
 {
+  
+  
+    # check whether fixedOrders input is correct
+    if (class(fixedOrders) == "numeric" && length(fixedOrders) == 2){
+      fixedOrders <- matrix(as.integer(fixedOrders), nrow=1)
+    } else if (is.null(fixedOrders)) {
+      fixedOrders <- matrix(ncol=2,nrow=0)
+    } else if (!is.matrix(fixedOrders) || ncol(fixedOrders) != 2){
+      stop("fixedOrders is a [nrow X 2] matrix where pi(fixedOrders[i,1]) < pi(fixedOrders[i,2]), and pi is a causal ordering of the nodes")
+    }
+  
     if(output)
     {
         cat("number of cores:", numCores, "\n")
@@ -94,7 +106,8 @@ function(X, scoreName = "SEMGAM",
     ####
     # compute score matrix 
     ptm <- proc.time()[3]
-    computeScoreMatTmp <- computeScoreMat(X, scoreName=scoreName, numParents = 1, numCores = numCores, output = output, selMat = selMat, parsScore = parsScore, intervMat = intervMat, intervData = intervData)
+    computeScoreMatTmp <- computeScoreMat(X, scoreName=scoreName, numParents = 1, numCores = numCores, output = output, 
+                                  selMat = selMat, parsScore = parsScore, intervMat = intervMat, intervData = intervData)
     timeScoreMat <- timeScoreMat + proc.time()[3] - ptm
     if(output)
     {
@@ -105,13 +118,22 @@ function(X, scoreName = "SEMGAM",
     diag(pathMatrix) <- rep(1,p)
     Adj <- as(matrix(0,p,p), "sparseMatrix")
     scoreNodes <- computeScoreMatTmp$scoreEmptyNodes
+  
+    fixedOrdersAdded <- 0L
+      
     # Greedily adding edges
     while(sum(computeScoreMatTmp$scoreMat!=-Inf) > 0)
     {
         # Find the best edge
         ptm <- proc.time()[3]
-        ix_max <- arrayInd(which.max(computeScoreMatTmp$scoreMat), dim(computeScoreMatTmp$scoreMat))
-                
+        
+        if (fixedOrdersAdded < nrow(fixedOrders)){
+          fixedOrdersAdded = fixedOrdersAdded + 1L
+          ix_max <- fixedOrders[fixedOrdersAdded, , drop=F]
+        } else {
+          ix_max <- arrayInd(which.max(computeScoreMatTmp$scoreMat), dim(computeScoreMatTmp$scoreMat))
+        }
+        
         timeMax <- timeMax + proc.time()[3] - ptm
         Adj[ix_max] <- 1
         scoreNodes[ix_max[2]] <- scoreNodes[ix_max[2]] + computeScoreMatTmp$scoreMat[ix_max]
@@ -139,7 +161,9 @@ function(X, scoreName = "SEMGAM",
         
         # Update the score of column j
         ptm <- proc.time()[3]
-        computeScoreMatTmp$scoreMat <- updateScoreMat(computeScoreMatTmp$scoreMat, X, scoreName = scoreName, ix_max[1], ix_max[2],scoreNodes, Adj, numCores=numCores, output = output, maxNumParents = maxNumParents, parsScore = parsScore, intervMat = intervMat, intervData = intervData)
+        computeScoreMatTmp$scoreMat <- updateScoreMat(computeScoreMatTmp$scoreMat, X, scoreName = scoreName, ix_max[1], ix_max[2],
+                                                      scoreNodes, Adj, numCores=numCores, output = output, maxNumParents = maxNumParents, 
+                                                      parsScore = parsScore, intervMat = intervMat, intervData = intervData)
         timeUpdate <- timeUpdate + proc.time()[3] - ptm
         
         counterUpdate <- counterUpdate + 1
