@@ -5,6 +5,7 @@ function(X, scoreName = "SEMGAM",
                           maxNumParents = min(dim(X)[2] - 1, round(dim(X)[1]/20)),
                           output = FALSE,
                           fixedOrders = matrix(ncol=2,nrow=0),
+                          orderFixationMethod = "force_edge",
                           variableSel = FALSE, 
                           variableSelMethod = selGamBoost, 
                           variableSelMethodPars = list(atLeastThatMuchSelected = 0.02, atMostThatManyNeighbors = 10),
@@ -114,9 +115,15 @@ function(X, scoreName = "SEMGAM",
         cat("Object size of computeScoreMatTmp: ", object.size(computeScoreMatTmp), "\n" )
     }
     # We need the pathMatrix (entry (i,j) being one means that there is a directed path from i to j) in order to keep track of possible cycles.
-    pathMatrix <- matrix(0,p,p)
-    diag(pathMatrix) <- rep(1,p)
-    Adj <- as(matrix(0,p,p), "sparseMatrix")
+    pathMatrix <- matrix(FALSE,p,p)
+    diag(pathMatrix) <- TRUE
+    if (orderFixationMethod == "emulate_edge"){
+      computeScoreMatTmp$scoreMat[fixedOrders[,2:1,drop=F]] <- -Inf #prevents adding of a edge from j to i 
+      pathMatrix[fixedOrders] <- TRUE #will prevent adding of edges from DE(j) to {AC(i),i} and {DE(j),j} to {AC(i}
+      # where (i,j) is a row of fixedOrders
+    }
+        
+    Adj <- sparseMatrix(i=integer(),j=integer(),dims=c(p,p))
     scoreNodes <- computeScoreMatTmp$scoreEmptyNodes
   
     fixedOrdersAdded <- 0L
@@ -127,7 +134,7 @@ function(X, scoreName = "SEMGAM",
         # Find the best edge
         ptm <- proc.time()[3]
         
-        if (fixedOrdersAdded < nrow(fixedOrders)){
+        if (orderFixationMethod == "force_edge" && fixedOrdersAdded < nrow(fixedOrders)){
           fixedOrdersAdded = fixedOrdersAdded + 1L
           ix_max <- fixedOrders[fixedOrdersAdded, , drop=F]
         } else {
@@ -150,8 +157,8 @@ function(X, scoreName = "SEMGAM",
         pathMatrix[ix_max] <- 1
         DescOfNewChild <- which(pathMatrix[ix_max[2],]==1)
         AncOfNewParent <- which(pathMatrix[,ix_max[1]]==1)
-        pathMatrix[AncOfNewParent,DescOfNewChild] <- 1
-        computeScoreMatTmp$scoreMat[t(pathMatrix) == 1] <- -Inf 
+        pathMatrix[AncOfNewParent,DescOfNewChild] <- TRUE
+        computeScoreMatTmp$scoreMat[DescOfNewChild,AncOfNewParent] <- -Inf 
         timeCycle <- timeCycle + proc.time()[3] - ptm
         
         # Record the score of the current graph
