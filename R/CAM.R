@@ -15,15 +15,16 @@ function(X, scoreName = "SEMGAM",
                           intervData = FALSE, 
                           intervMat = NA) 
 {
-  
-  
-    # check whether fixedOrders input is correct
+     # check whether fixedOrders input is correct
+    possibleOrderFixationMethods <- c("force_edge", "emulate_edge", "free")
+    if (!(orderFixationMethod %in% possibleOrderFixationMethods)) 
+      stop("orderFixationMethod must be either ",paste0(possibleOrderFixationMethods, collapse = " or "),".")
     if (class(fixedOrders) == "numeric" && length(fixedOrders) == 2){
       fixedOrders <- matrix(as.integer(fixedOrders), nrow=1)
     } else if (is.null(fixedOrders)) {
       fixedOrders <- matrix(ncol=2,nrow=0)
     } else if (!is.matrix(fixedOrders) || ncol(fixedOrders) != 2){
-      stop("fixedOrders is a [nrow X 2] matrix where pi(fixedOrders[i,1]) < pi(fixedOrders[i,2]), and pi is a causal ordering of the nodes")
+      stop("fixedOrders must be a [nrow X 2] matrix where pi(fixedOrders[i,1]) < pi(fixedOrders[i,2]), and pi is a causal ordering of the nodes")
     }
   
     if(output)
@@ -142,7 +143,7 @@ function(X, scoreName = "SEMGAM",
         }
         
         timeMax <- timeMax + proc.time()[3] - ptm
-        Adj[ix_max] <- 1
+        Adj[ix_max] <- TRUE
         scoreNodes[ix_max[2]] <- scoreNodes[ix_max[2]] + computeScoreMatTmp$scoreMat[ix_max]
         if(output)
         {
@@ -154,11 +155,10 @@ function(X, scoreName = "SEMGAM",
         
         # Avoid cycles
         ptm <- proc.time()[3]
-        pathMatrix[ix_max] <- 1
-        DescOfNewChild <- which(pathMatrix[ix_max[2],]==1)
-        AncOfNewParent <- which(pathMatrix[,ix_max[1]]==1)
-        pathMatrix[AncOfNewParent,DescOfNewChild] <- TRUE
-        computeScoreMatTmp$scoreMat[DescOfNewChild,AncOfNewParent] <- -Inf 
+        DescOfAndNewChild <- which(pathMatrix[ix_max[2],])
+        AncOfAndNewParent <- which(pathMatrix[,ix_max[1]])
+        pathMatrix[AncOfAndNewParent,DescOfAndNewChild] <- TRUE
+        computeScoreMatTmp$scoreMat[DescOfAndNewChild,AncOfAndNewParent] <- -Inf 
         timeCycle <- timeCycle + proc.time()[3] - ptm
         
         # Record the score of the current graph
