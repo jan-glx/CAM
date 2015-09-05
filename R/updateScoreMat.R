@@ -14,12 +14,15 @@ function(scoreMat, X, scoreName, i, j, scoreNodes, Adj, output, numCores, maxNum
         toUpdate <- setdiff(1:p,notAllowedParOfJ)
         if(length(existingParOfJ)< maxNumParents)
         {
+            argList <- list(rowParents = rowParents, selMat = matrix(TRUE,p,p), 
+                            scoreName = scoreName, X = X, output = output, node2 = j, 
+                            parsScore = parsScore, intervMat = intervMat, intervData = intervData)
             if(numCores == 1)
             {
-                scoreUpdate <- mapply(computeScoreMatParallel,MoreArgs = list(rowParents = rowParents, selMat = matrix(TRUE,p,p), scoreName = scoreName, X = X, output = output, node2 = j, parsScore = parsScore, intervMat = intervMat, intervData = intervData), i = toUpdate)
+                scoreUpdate <- mapply(computeScoreMatParallel,MoreArgs = argList, i = toUpdate)
             } else
             {
-                scoreUpdate <- mcmapply(computeScoreMatParallel,MoreArgs = list(rowParents = rowParents, selMat = matrix(TRUE,p,p), scoreName = scoreName, X = X, output = output, node2 = j, parsScore = parsScore, intervMat = intervMat, intervData = intervData), i = toUpdate, mc.cores = numCores)
+                scoreUpdate <- mcmapply(computeScoreMatParallel,MoreArgs = argList, i = toUpdate, mc.cores = numCores)
             }
         } else
         {

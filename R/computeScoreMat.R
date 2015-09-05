@@ -16,12 +16,14 @@ function(X, scoreName, numParents, output, numCores, selMat, parsScore, intervMa
     tt <- expand.grid(1:dim(rowParents)[1], 1:p)
     allNode2 <- tt[,2]
     allI <- tt[,1]
+    argList <- list(rowParents = rowParents, selMat = selMat, scoreName = scoreName, X = X, output = output,
+                    parsScore = parsScore, intervMat = intervMat, intervData = intervData)
     if(numCores == 1)
     {
-        scoreMat <- mapply(computeScoreMatParallel, MoreArgs = list(rowParents = rowParents, selMat = selMat, scoreName = scoreName, X = X, output = output, parsScore = parsScore, intervMat = intervMat, intervData = intervData), node2 = allNode2, i = allI)
+        scoreMat <- mapply(computeScoreMatParallel, MoreArgs = argList, node2 = allNode2, i = allI)
     } else
     {
-        scoreMat <- mcmapply(computeScoreMatParallel, MoreArgs = list(rowParents = rowParents, selMat = selMat, scoreName = scoreName, X = X, output = output, parsScore = parsScore, intervMat = intervMat, intervData = intervData), node2 = allNode2, i = allI, mc.cores = numCores)
+        scoreMat <- mcmapply(computeScoreMatParallel, MoreArgs = argList, node2 = allNode2, i = allI, mc.cores = numCores)
     }
     
     scoreMat <- matrix(scoreMat,dim(rowParents)[1],p)
