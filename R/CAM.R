@@ -220,3 +220,92 @@ function(X, scoreName = "SEMGAM",
     result <- list(Adj = Adj, Score = sum(scoreNodes), timesVec = c(timeSel, timeScoreMat, timeCycle, timeUpdate, timePrune, timeMax, timeTotal), scoreVec = scoreVec, edgeList = edgeList)
     return(result)  
 }
+
+predict.cam <- function(object, newdata)
+{
+    object$data <- as.data.table(newdata)
+    object$fitted.values <- setDT(lapply(object$nodeModels, predict, object$data))
+    object$df.residual <- nrow(object$data)
+    return(object)
+}
+
+residuals.cam <- function(object) object$data - object$fitted.values
+
+logLik.cam <- function(object)
+{
+    stop("Not Implemented") # no idea if this is right ...
+    res <- residuals(object)
+    val <- sum(1/2*(-log(sapply(res,var))-log(2*pi)+1))
+    attr(val, "df") <- ncol(res) #reestimating variance
+    attr(val, "nobs") <- nrow(res)
+    class(val) <- "logLik"
+}
+
+logLikScore <- function(object){-sum(log(sapply(residuals(object),var)))}
+
+fitNode <- function(X,j,parents_of_j, method= "gam", pars = list(numBasisFcts = 10))
+{
+    if (method=="gam")
+    {
+        nobs <- nrow(X)
+        max_numBasisFcts <-ceiling(nobs/(3*length(parents_of_j)))
+        if (max_numBasisFcts < pars$numBasisFcts)
+        {
+            cat("changed number of basis functions from", pars$numBasisFcts,"to    ", 
+                max_numBasisFcts, "    in order to have enough samples per basis function\n")
+            pars$numBasisFcts <- max_numBasisFcts
+        }
+        f <- formula(paste0(colnames(X)[j],"~ 1", paste(sprintf("+ s(%s, k=%i)", 
+                                                                colnames(X)[parents_of_j], 
+                                                                pars$numBasisFcts), collapse="")))
+    } else {
+        f <- formula(paste0(colnames(X)[j],"~ 1", paste(sprintf("+%s",colnames(X)[parents_of_j]),collapse="")))
+    }
+    res <- switch(method,
+           gam = {
+               res <- try(gam(formula=f, data=X),silent = TRUE)
+               if(typeof(res) == "logical" || inherits(res, "try-error"))
+               {
+                   cat("There was some error with gam. The smoothing parameter is set to zero.\n")
+                   f <- formula(paste0(colnames(X)[j],"~ 1",
+                                       paste(sprintf("+ s(%s, k=%i, sp=0)", 
+                                                     colnames(X)[parents_of_j], 
+                                                     pars$numBasisFcts), collapse="")))
+                   res <- gam(formula=f, data=X)
+               }
+               res
+           },
+           glmnet = {
+               cvres <- cv.glmnet(X[, parents_of_j, with=F], X[, j, with=F])
+               glmnet(X[, parents_of_j, with=F], X[, j, with=F], lambda = cvres$lambda.1se)
+           },
+           {
+               do.call(method, c(list(formula = f, data = X),pars))
+           })
+    return(res)
+}
+
+
+cam.fit <- function(X, causalDAG=NULL, scoreName = "SEMGAM", parsScore = list(numBasisFcts = 10))
+{
+    if (is.null(causalDAG)) Stop("Not implemented. Use CAM(...) instead.")
+    if (is.list(X)||is.data.frame(X)||is.data.table(X)) setDT(X)
+    else X <- as.data.table(X)
+    p <- nrow(causalDAG)
+    single.fit <- 
+        switch(
+            scoreName,
+            SEMSEV = {stop("This score does not work. It does not decouple.")},
+            SEMIND = {stop("NOT IMPLEMENTED")},
+            SEMGAM = {function(j) fitNode(X,j,causalDAG[,j], pars = parsScore)},
+            SEMLIN = {function(j) fitNode(X,j,causalDAG[,j],method="lm")},
+            SEMGP  = {stop("NOT IMPLEMENTED")}, 
+            {stop("I do not know this score function.")}
+        )
+    nodeModels <- lapply(setNames(as.list(1:p), colnames(X)), single.fit)
+    vals <- setDT(lapply(nodeModels,fitted.values))
+    cam <- list(call= match.call(), causalDAG = causalDAG, p = p, nodeModels = nodeModels, data = X, 
+                fitted.values = vals)
+    class(cam) <- "cam"
+    return(cam)
+}
