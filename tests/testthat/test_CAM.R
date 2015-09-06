@@ -1,6 +1,6 @@
-library(CAM)
-
 test_that("simple example dataset", {
+    #library(CAM)
+    #library(Matrix)
   set.seed(1)
   n <- 500
   eps1<-rnorm(n)
@@ -15,8 +15,11 @@ test_that("simple example dataset", {
   
   X <- cbind(x1,x2,x3,x4)
   
-  trueDAG <- cbind(c(0,1,0,0),c(0,0,0,0),c(0,1,0,0),c(1,0,1,0))
-  ## x4 <- x3 <- x2 -> x1 -> x4
+  trueDAG <- sparseMatrix(i=c(3, 2, 2, 1),
+                          j=c(4, 3, 1, 4),dims=c(4,4)) 
+  ## x4 <- x3 <- x2 -> x1 
+  ##  ^               /
+  ##   \_____________/
   ## adjacency matrix:
   ## 0 0 0 1
   ## 1 0 1 0

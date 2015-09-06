@@ -3,7 +3,7 @@ function(scoreMat, X, scoreName, i, j, scoreNodes, Adj, output, numCores, maxNum
     # new edge: from i to j
 {
     p <- dim(X)[2]
-    existingParOfJ <- which(Adj[,j] == 1)
+    existingParOfJ <- which(Adj[,j])
     notAllowedParOfJ <- which(scoreMat[,j] == -Inf)
     # if there is something left that we need to update
     if(length(notAllowedParOfJ) < p)
