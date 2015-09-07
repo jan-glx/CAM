@@ -47,4 +47,23 @@ test_that("fit model given DAG", { set.seed(1)
     expect_equal(estDAG$Score, logLikScore(predict(cam2,X)))
 })
 
+test_that("var test positive", { set.seed(1)
+    estDAG_F <- CAM(X,fixedOrders = c(2,1),orderFixationMethod = "emulate_edge", pruning=T)$Adj
+    estDAG_R <- CAM(X,fixedOrders = c(1,2),orderFixationMethod = "emulate_edge", pruning=T)$Adj
+    
+    cam_F <- cam.fit(X, estDAG_F) 
+    cam_R <- cam.fit(X, estDAG_R)
+    
+    expect_less_than(var.test(cam_F, cam_R)$p.value, 0.05)
+})
+
+test_that("var test negative", { set.seed(1)
+    estDAG_F <- CAM(X,fixedOrders = c(3,1),orderFixationMethod = "emulate_edge", pruning=T)$Adj
+    estDAG_R <- CAM(X,fixedOrders = c(1,3),orderFixationMethod = "emulate_edge", pruning=T)$Adj
+    
+    cam_F <- cam.fit(X, estDAG_F) 
+    cam_R <- cam.fit(X, estDAG_R)
+    
+    expect_more_than(var.test(cam_F, cam_R)$p.value, 0.05)
+})
 

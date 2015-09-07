@@ -221,29 +221,7 @@ function(X, scoreName = "SEMGAM",
     return(result)  
 }
 
-predict.cam <- function(object, newdata)
-{
-    object$data <- as.data.table(newdata)
-    object$fitted.values <- setDT(lapply(object$nodeModels, predict, object$data))
-    object$df.residual <- nrow(object$data)
-    return(object)
-}
-
-residuals.cam <- function(object) object$data - object$fitted.values
-
-logLik.cam <- function(object)
-{
-    stop("Not Implemented") # no idea if this is right ...
-    res <- residuals(object)
-    val <- sum(1/2*(-log(sapply(res,var))-log(2*pi)+1))
-    attr(val, "df") <- ncol(res) #reestimating variance
-    attr(val, "nobs") <- nrow(res)
-    class(val) <- "logLik"
-}
-
-logLikScore <- function(object){-sum(log(sapply(residuals(object),var)))}
-
-fitNode <- function(X,j,parents_of_j, method= "gam", pars = list(numBasisFcts = 10))
+fitNode <- function(X, j, parents_of_j, method= "gam", pars = list(numBasisFcts = 10))
 {
     if (method=="gam")
     {
@@ -262,37 +240,27 @@ fitNode <- function(X,j,parents_of_j, method= "gam", pars = list(numBasisFcts = 
         f <- formula(paste0(colnames(X)[j],"~ 1", paste(sprintf("+%s",colnames(X)[parents_of_j]),collapse="")))
     }
     res <- switch(method,
-           gam = {
-               res <- try(gam(formula=f, data=X),silent = TRUE)
-               if(typeof(res) == "logical" || inherits(res, "try-error"))
-               {
-                   cat("There was some error with gam. The smoothing parameter is set to zero.\n")
-                   f <- formula(paste0(colnames(X)[j],"~ 1",
-                                       paste(sprintf("+ s(%s, k=%i, sp=0)", 
-                                                     colnames(X)[parents_of_j], 
-                                                     pars$numBasisFcts), collapse="")))
-                   res <- gam(formula=f, data=X)
-               }
-               res
-           },
-           glmnet = {
-               cvres <- cv.glmnet(X[, parents_of_j, with=F], X[, j, with=F])
-               glmnet(X[, parents_of_j, with=F], X[, j, with=F], lambda = cvres$lambda.1se)
-           },
-           {
-               do.call(method, c(list(formula = f, data = X),pars))
-           })
+                  gam = {
+                      res <- try(gam(formula=f, data=X),silent = TRUE)
+                      if(typeof(res) == "logical" || inherits(res, "try-error"))
+                      {
+                          cat("There was some error with gam. The smoothing parameter is set to zero.\n")
+                          f <- formula(paste0(colnames(X)[j],"~ 1",
+                                              paste(sprintf("+ s(%s, k=%i, sp=0)", 
+                                                            colnames(X)[parents_of_j], 
+                                                            pars$numBasisFcts), collapse="")))
+                          res <- gam(formula=f, data=X)
+                      }
+                      res
+                  },
+                  glmnet = {
+                      cvres <- cv.glmnet(X[, parents_of_j, with=F], X[, j, with=F])
+                      glmnet(X[, parents_of_j, with=F], X[, j, with=F], lambda = cvres$lambda.1se)
+                  },
+                  {
+                      do.call(method, c(list(formula = f, data = X),pars))
+                  })
     return(res)
-}
-
-print.cam <- function(x, ...)
-{
-    cat("Call:\n")
-    print(x$call)
-    cat("\nCausal DAG:\n")
-    print(x$causalDAG)
-    cat("Log likelihod score:", logLikScore(x))
-    invisible(x)
 }
 
 cam.fit <- function(X, causalDAG=NULL, scoreName = "SEMGAM", parsScore = list(numBasisFcts = 10))
@@ -314,7 +282,58 @@ cam.fit <- function(X, causalDAG=NULL, scoreName = "SEMGAM", parsScore = list(nu
     nodeModels <- lapply(setNames(as.list(1:p), colnames(X)), single.fit)
     vals <- setDT(lapply(nodeModels,fitted.values))
     cam <- list(call= match.call(), causalDAG = causalDAG, p = p, nodeModels = nodeModels, data = X, 
-                fitted.values = vals)
+                fitted.values = vals, 
+                df.residual = sapply(nodeModels, "[[", "df.residual"),
+                est.df = sapply(nodeModels,  function(x) sum(x$est.residual))
+                )
     class(cam) <- "cam"
     return(cam)
+}
+
+predict.cam <- function(object, newdata)
+{
+    object$data <- as.data.table(newdata)
+    object$fitted.values <- setDT(lapply(object$nodeModels, predict, object$data))
+    object$df.residual <- nrow(object$data)
+    return(object)
+}
+
+residuals.cam <- function(object) object$data - object$fitted.values
+
+logLik.cam <- function(object)
+{
+    stop("Not Implemented") # no idea if this is right ...
+    res <- residuals(object)
+    val <- sum(1/2*(-log(sapply(res,var))-log(2*pi)+1))
+    attr(val, "df") <- ncol(res) #reestimating variance
+    attr(val, "nobs") <- nrow(res) * ncol(res)
+    class(val) <- "logLik"
+}
+
+logLikScore <- function(object){-sum(log(sapply(residuals(object),var)))}
+
+print.cam <- function(x, ...)
+{
+    cat("Call:\n")
+    print(x$call)
+    cat("\nCausal DAG:\n")
+    print(x$causalDAG)
+    cat("Log likelihod score:", logLikScore(x))
+    invisible(x)
+}
+
+var.residuals <- function(object) UseMethod("var.residuals")
+
+var.residuals.cam <- function(object) {
+    apply(residuals(object)^2, 2, sum)/object$df.residual
+}
+
+var.test.cam <- function (x, y, ratio = 1, alternative = c("two.sided", "less", "greater"), 
+                          conf.level = 0.95, ...) 
+{
+    x2 <- list(df.residual = sum(x$df.residual), residuals = sqrt(sum(var.residuals(x))*sum(x$df.residual)))
+    y2 <- list(df.residual = sum(y$df.residual), residuals = sqrt(sum(var.residuals(y))*sum(y$df.residual)))
+    class(x2) <- "lm"
+    class(y2) <- "lm"
+    return(var.test(x2, y2, ratio, alternative, conf.level, ...))
 }
