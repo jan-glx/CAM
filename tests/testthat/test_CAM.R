@@ -65,7 +65,7 @@ test_that("fit model given DAG", {
     ## 0 0 0 0
     
     estDAG <- CAM(X, variableSel = TRUE, pruning = TRUE)
-    cam <- cam.fit(X, trueDAG) 
+    cam <- cam.fit(X, estDAG$Adj) 
     expect_less_than(logLikScore(predict(cam,X)), estDAG$Score+0.00000001)
     
     estDAG <- CAM(X, variableSel = FALSE, pruning = FALSE)

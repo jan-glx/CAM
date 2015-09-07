@@ -285,6 +285,15 @@ fitNode <- function(X,j,parents_of_j, method= "gam", pars = list(numBasisFcts = 
     return(res)
 }
 
+print.cam <- function(x, ...)
+{
+    cat("Call:\n")
+    print(x$call)
+    cat("\nCausal DAG:\n")
+    print(x$causalDAG)
+    cat("Log likelihod score:", logLikScore(x))
+    invisible(x)
+}
 
 cam.fit <- function(X, causalDAG=NULL, scoreName = "SEMGAM", parsScore = list(numBasisFcts = 10))
 {
