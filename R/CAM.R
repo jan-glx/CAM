@@ -297,7 +297,7 @@ print.cam <- function(x, ...)
 
 cam.fit <- function(X, causalDAG=NULL, scoreName = "SEMGAM", parsScore = list(numBasisFcts = 10))
 {
-    if (is.null(causalDAG)) Stop("Not implemented. Use CAM(...) instead.")
+    if (is.null(causalDAG)) stop("Not implemented. Use CAM(...) instead.")
     if (is.list(X)||is.data.frame(X)||is.data.table(X)) setDT(X)
     else X <- as.data.table(X)
     p <- nrow(causalDAG)
