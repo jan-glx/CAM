@@ -72,6 +72,14 @@ test_that("slimming works", { set.seed(1)
     expect_equal(predict(cam, X)$fitted.values, predict(slim(cam), X)$fitted.values)
 })
 
+test_that("predicting works", {
+    cam <- cam.fit(X, trueDAG)
+    cam_fits <- cam$fitted.values
+    predicted_fits <- predict(cam, X)$fitted.values
+    expect_true(all(mapply(function(x,y) all(x==y),cam_fits,predicted_fits)))
+})
+
+all(mapply(function(x,y) all(x==y),tmp1,tmp2))
 
 test_that("dag to causal order to dag works",{
     causalOrder <- dagToCausalOrder(trueDAG)
