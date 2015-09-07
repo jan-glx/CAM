@@ -73,3 +73,9 @@ test_that("slimming works", { set.seed(1)
 })
 
 
+test_that("dag to causal order to dag works",{
+    causalOrder <- dagToCausalOrder(trueDAG)
+    adjacency <- causalOrderToAdjacency(causalOrder)
+    expect_true(all(adjacency[as.matrix(trueDAG)]))
+})
+
