@@ -310,7 +310,8 @@ logLik.cam <- function(object)
     class(val) <- "logLik"
 }
 
-logLikScore <- function(object){-sum(log(sapply(residuals(object),var)))}
+logLikScore <- function(object) UseMethod("logLikScore")
+logLikScore.cam <- function(object){-sum(log(sapply(residuals(object), var)))}
 
 print.cam <- function(x, ...)
 {
@@ -337,3 +338,39 @@ var.test.cam <- function (x, y, ratio = 1, alternative = c("two.sided", "less", 
     class(y2) <- "lm"
     return(var.test(x2, y2, ratio, alternative, conf.level, ...))
 }
+
+slim <- function(object) UseMethod("slim")
+
+slim.gam <- function(object)
+{
+    object$offset <- NULL
+    object$model <- NULL
+    for (i in seq_along(object$smooth)) {
+        #object$smooth[[i]]$UZ <- NULL # prediction does not work
+        #object$smooth[[i]]$Xu <- NULL # without
+    }
+    object$y <- NULL
+    object$weights <- NULL
+    object$prior.weights <- NULL
+    object$linear.predictors <- NULL
+    object$fitted.values <- NULL
+    object$residuals <- NULL
+    class(object) <- c("slimmed.gam",class(object))
+    return(object)
+}
+
+logLikScore.slimmed.cam <- function(object) return(object$logLikScore)
+var.residuals.slimmed.cam <- function(object) return(object$var.residuals)
+
+slim.cam <- function(object)
+{
+    object$var.residuals <- var.residuals(object)
+    #object$logLik <- logLik(object)
+    object$logLikScore <- logLikScore(object)
+    object$fitted.values <- NULL
+    object$data <- NULL
+    object$nodeModels <- lapply(object$nodeModels, slim)
+    class(object) <- c("slimmed.cam",class(object))
+    return(object)
+}
+

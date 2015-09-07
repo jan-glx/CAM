@@ -67,3 +67,9 @@ test_that("var test negative", { set.seed(1)
     expect_more_than(var.test(cam_F, cam_R)$p.value, 0.05)
 })
 
+test_that("slimming works", { set.seed(1)
+    cam <- cam.fit(X, trueDAG) 
+    expect_equal(predict(cam, X)$fitted.values, predict(slim(cam), X)$fitted.values)
+})
+
+
