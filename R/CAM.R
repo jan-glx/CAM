@@ -337,7 +337,14 @@ var.test.cam <- function (x, y, ratio = 1, alternative = c("two.sided", "less", 
     y2 <- list(df.residual = sum(y$df.residual), residuals = sqrt(sum(var.residuals(y))*sum(y$df.residual)))
     class(x2) <- "lm"
     class(y2) <- "lm"
-    return(var.test(x2, y2, ratio, alternative, conf.level, ...))
+    return(var.test(getLmForVarTest(x), getLmForVarTest(y), ratio, alternative, conf.level, ...))
+}
+
+getLmForVarTest <- function(x)
+{
+    x <- list(df.residual = sum(x$df.residual), residuals = sqrt(sum(var.residuals(x))*sum(x$df.residual)))
+    class(x) <- "lm"
+    return(x)
 }
 
 slim <- function(object) UseMethod("slim")
