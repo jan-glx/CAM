@@ -2,4 +2,4 @@ import(glmnet, mboost, Matrix, parallel, mgcv, data.table)
 export(CAM, computeScoreMat, computeScoreMatParallel, updateScoreMat, selGam, selGamBoost, selLasso,
        selLm, selLmBoost, cam.fit, logLik.cam, print.cam, residuals.cam, predict.cam, logLikScore,
        logLikScore.cam, var.test.cam, var.residuals.cam, var.residuals, slim, slim.cam, slim.gam,
-       getLmForVarTest)
+       dagToCausalOrder, causalOrderToAdjacency, getLmForVarTest)
