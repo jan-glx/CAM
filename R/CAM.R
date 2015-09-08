@@ -268,6 +268,7 @@ cam.fit <- function(X, causalDAG=NULL, scoreName = "SEMGAM", parsScore = list(nu
     if (is.null(causalDAG)) stop("Not implemented. Use CAM(...) instead.")
     if (is.list(X)||is.data.frame(X)||is.data.table(X)) setDT(X)
     else X <- as.data.table(X)
+    if (!any(class(causalDAG) %in% c("matrix", "ngCMatrix"))) stop("causalDAG must be of class 'matrix' or 'ngCMatrix'")
     p <- nrow(causalDAG)
     single.fit <- 
         switch(
