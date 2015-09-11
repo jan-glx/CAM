@@ -79,9 +79,18 @@ test_that("predicting works", {
     expect_equal(cam_fits, predicted_fits)
 })
 
-test_that("dag to causal order to dag works",{
+test_that("dag to causal order to dag works", {
     causalOrder <- dagToCausalOrder(trueDAG)
     adjacency <- causalOrderToAdjacency(causalOrder)
     expect_true(all(adjacency[as.matrix(trueDAG)]))
+})
+
+
+test_that("", {
+    pathMatrixShould <- structure(c(TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, 
+                                    TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE), .Dim = c(4L, 4L))
+    expect_equal(getPathMatrix(as.matrix(trueDAG)), pathMatrixShould)
+    expect_equal(matrix(F, nrow=4, ncol=4), matrix(F, nrow=4, ncol=4))
+    expect_equal(matrix(F, nrow=0, ncol=0), matrix(F, nrow=0, ncol=0))
 })
 
