@@ -1,3 +1,4 @@
+#' @import data.table
 selXXBoost <-
   function(train_function, X, pars, output, k)
   {

@@ -1,3 +1,9 @@
+#' auxiliary file for CAM: selection based on gam (mgcv)
+#' 
+#' auxiliary file for CAM: selection based on gam (mgcv)
+#' 
+#' 
+#' @export selGam
 selGam <-
 function(X,pars = list(cutOffPVal = 0.001, numBasisFcts = 10),output = FALSE,k)
 {
@@ -10,7 +16,7 @@ function(X,pars = list(cutOffPVal = 0.001, numBasisFcts = 10),output = FALSE,k)
     if(p >= 2)
     {
         mod_gam <- train_gam(X[,-k],as.matrix(X[,k]),pars)
-        pValVec <- summary.gam(mod_gam$model)$s.pv
+        pValVec <- summary(mod_gam$model)$s.pv
         if(output)
         {
             cat("vector of p-values:", pValVec, "\n")

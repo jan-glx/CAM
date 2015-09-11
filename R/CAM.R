@@ -1,3 +1,93 @@
+
+
+#' Causal Additive Model
+#' 
+#' fits a causal additive model using the CAM algorithm, see references below
+#' 
+#' The code fits a CAM model. See the references below for more details.
+#' Identifiability results for the model class can be found in
+#' 
+#' J. Peters, J. Mooij, D. Janzing, B. Sch\"olkopf: Causal Discovery with
+#' Continuous Additive Noise Models, JMLR 15:2009-2053, 2014.
+#' 
+#' @param X nxp matrix of training inputs (n data points, p dimensions)
+#' @param scoreName specifies the model type which is used to compute the
+#' score. Default is "SEMGAM" which assumes a generalized additive model class.
+#' Other options include "SEMLIN" which fits a linear model.
+#' @param parsScore additional parameters can be supported to the score
+#' function.
+#' @param numCores specifies the number of cores that can be used for
+#' computation.
+#' @param maxNumParents specifies the maximal number of parents that are
+#' allowed in the model.
+#' @param output shall output be printed to the console (TRUE/FALSE)
+#' @param variableSel specifies whether initial variable selection (Step 1 of
+#' CAM algorithm) shall be performed (TRUE) or not (FALSE). Initial variable
+#' selection reduces the number of possible parents for a given node and
+#' therefore enables computing the causal structure for large p.
+#' @param variableSelMethod specifies the method that is used for variable
+#' selection. Default is selGamBoost which uses the gamboost function from
+#' mboost package. Other options include: selGam (gam() from mgcv), selLm based
+#' on linear regression, selLasso based on Lasso regression from package
+#' glmnet.
+#' @param variableSelMethodPars optional parameters to modify settings of the
+#' selection method.
+#' @param pruning specifies whether pruning (Step 3 of CAM algorithm) shall be
+#' performed (TRUE) or not (FALSE). Pruning reduces the number of edges in the
+#' estimated causal structure.
+#' @param pruneMethod specifies the method used for the pruning step. Default
+#' is selGAM which is based on the gam() function from the mgcv package.
+#' @param pruneMethodPars optional parameters to tune the pruning step.
+#' @param intervData boolean that indicates whether we use interventional data.
+#' @param intervMat the matrix intervMat has the same dimension as X. entry
+#' (i,j) == TRUE indicates that in experiment i, variable j has been intervened
+#' on.
+#' @return list of attributes of the final estimated causal structure
+#' \item{Adj}{adjacency matrix of estimated causal graph} \item{Score}{Total
+#' edge score of estimated graph} \item{timesVec}{Vector containing various
+#' time measurements for execution times of the individual steps of the CAM
+#' algorithm}
+#' @author Jonas Peters <jonas.peters@@tuebingen.mpg.de> and Jan Ernest
+#' <ernest@@stat.math.ethz.ch>
+#' @references P. B\"uhlmann, J. Peters, J. Ernest: CAM: Causal Additive
+#' Models, high-dimensional Order Search and Penalized Regression Annals of
+#' Statistics 42:2526-2556, 2014.
+#' @keywords Causality Regression Additive Noise Models Restricted Structural
+#' Equation Model
+#' @examples
+#' 
+#' n <- 500
+#' eps1<-rnorm(n)
+#' eps2<-rnorm(n)
+#' eps3<-rnorm(n)
+#' eps4<-rnorm(n)
+#' 
+#' x2 <- 0.5*eps2
+#' x1 <- 0.9*sign(x2)*(abs(x2)^(0.5))+0.5*eps1
+#' x3 <- 0.8*x2^2+0.5*eps3
+#' x4 <- -0.9*sin(x3) - abs(x1) + 0.5*eps4
+#' 
+#' X <- cbind(x1,x2,x3,x4)
+#' 
+#' trueDAG <- cbind(c(0,1,0,0),c(0,0,0,0),c(0,1,0,0),c(1,0,1,0))
+#' ## x4 <- x3 <- x2 -> x1 -> x4
+#' ## adjacency matrix:
+#' ## 0 0 0 1
+#' ## 1 0 1 0
+#' ## 0 0 0 1
+#' ## 0 0 0 0
+#' 
+#' estDAG <- CAM(X, scoreName = "SEMGAM", numCores = 1, output = TRUE, variableSel = FALSE, 
+#'               pruning = TRUE, pruneMethod = selGam, pruneMethodPars = list(cutOffPVal = 0.001))
+#' 
+#' cat("true DAG:\n")
+#' show(trueDAG)
+#' 
+#' cat("estimated DAG:\n")
+#' show(estDAG$Adj)
+#' 
+#' @export CAM
+#' @import data.table
 CAM <-
 function(X, scoreName = "SEMGAM", 
                           parsScore = list(numBasisFcts=10), 
@@ -70,7 +160,7 @@ function(X, scoreName = "SEMGAM",
                 selMat <- mapply(variableSelMethod,MoreArgs = list(X = X2, pars = variableSelMethodPars, output = output),1:p)
             } else
             {
-                selMat <- mcmapply(variableSelMethod,MoreArgs = list(X = X2, pars = variableSelMethodPars, output = output),1:p, mc.cores = numCores)
+                selMat <- parallel::mcmapply(variableSelMethod,MoreArgs = list(X = X2, pars = variableSelMethodPars, output = output),1:p, mc.cores = numCores)
             }
             # The next line includes j as a possible parent of i if i is considered a possible parent of j
             # selMat <- selMat | t(selMat)
@@ -125,7 +215,7 @@ function(X, scoreName = "SEMGAM",
       pathMatrix[fixedOrders] <- TRUE
     }
         
-    Adj <- sparseMatrix(i=integer(),j=integer(),dims=c(p,p))
+    Adj <- Matrix::sparseMatrix(i=integer(),j=integer(),dims=c(p,p))
     scoreNodes <- computeScoreMatTmp$scoreEmptyNodes
   
     fixedOrdersAdded <- 0L
@@ -220,7 +310,8 @@ function(X, scoreName = "SEMGAM",
     result <- list(Adj = Adj, Score = sum(scoreNodes), timesVec = c(timeSel, timeScoreMat, timeCycle, timeUpdate, timePrune, timeMax, timeTotal), scoreVec = scoreVec, edgeList = edgeList)
     return(result)  
 }
-
+#' @export 
+#' @import data.table
 fitNode <- function(X, j, parents_of_j, method= "gam", pars = list(numBasisFcts = 10))
 {
     if (method=="gam")
@@ -249,13 +340,13 @@ fitNode <- function(X, j, parents_of_j, method= "gam", pars = list(numBasisFcts 
                                               paste(sprintf("+ s(%s, k=%i, sp=0)", 
                                                             colnames(X)[parents_of_j], 
                                                             pars$numBasisFcts), collapse="")))
-                          res <- gam(formula=f, data=X)
+                          res <- mgcv::gam(formula=f, data=X)
                       }
                       res
                   },
                   glmnet = {
-                      cvres <- cv.glmnet(X[, parents_of_j, with=F], X[, j, with=F])
-                      glmnet(X[, parents_of_j, with=F], X[, j, with=F], lambda = cvres$lambda.1se)
+                      cvres <- glmnet::cv.glmnet(X[, parents_of_j, with=F], X[, j, with=F])
+                      glmnet::glmnet(X[, parents_of_j, with=F], X[, j, with=F], lambda = cvres$lambda.1se)
                   },
                   {
                       do.call(method, c(list(formula = f, data = X),pars))
@@ -263,6 +354,8 @@ fitNode <- function(X, j, parents_of_j, method= "gam", pars = list(numBasisFcts 
     return(res)
 }
 
+#' @export  
+#' @import data.table
 cam.fit <- function(X, causalDAG=NULL, scoreName = "SEMGAM", parsScore = list(numBasisFcts = 10))
 {
     if (is.null(causalDAG)) stop("Not implemented. Use CAM(...) instead.")
@@ -291,7 +384,10 @@ cam.fit <- function(X, causalDAG=NULL, scoreName = "SEMGAM", parsScore = list(nu
     return(cam)
 }
 
-predict.cam <- function(object, newdata)
+#' @export 
+#' @import data.table 
+#' @importFrom stats predict
+predict.cam <- function(object, newdata, ...)
 {
     object$data <- as.data.table(newdata)
     object$fitted.values <- setDT(lapply(object$nodeModels, predict, object$data))
@@ -299,9 +395,13 @@ predict.cam <- function(object, newdata)
     return(object)
 }
 
-residuals.cam <- function(object) object$data - object$fitted.values
+#' @export  
+#' @importFrom stats residuals
+residuals.cam <- function(object, ...) object$data - object$fitted.values
 
-logLik.cam <- function(object)
+#' @export 
+#' @importFrom stats logLik
+logLik.cam <- function(object, ...)
 {
     stop("Not Implemented") # no idea if this is right ...
     res <- residuals(object)
@@ -311,9 +411,13 @@ logLik.cam <- function(object)
     class(val) <- "logLik"
 }
 
-logLikScore <- function(object) UseMethod("logLikScore")
-logLikScore.cam <- function(object){-sum(log(sapply(residuals(object), var)))}
+#' @export 
+logLikScore <- function(object, ...) UseMethod("logLikScore")
 
+#' @export 
+logLikScore.cam <- function(object, ...){-sum(log(sapply(residuals(object), var)))}
+
+#' @export 
 print.cam <- function(x, ...)
 {
     cat("Call:\n")
@@ -324,12 +428,23 @@ print.cam <- function(x, ...)
     invisible(x)
 }
 
-var.residuals <- function(object) UseMethod("var.residuals")
+#' @export 
+var.residuals <- function(object, ...) UseMethod("var.residuals")
 
-var.residuals.cam <- function(object) {
+#' @export 
+var.residuals.cam <- function(object, ...) {
     apply(residuals(object)^2, 2, sum)/object$df.residual
 }
 
+# @export
+#setClass("cam")
+
+# @export
+#setClass("slimmed.cam")
+
+
+#' @export 
+#' @importFrom stats var.test
 var.test.cam <- function (x, y, ratio = 1, alternative = c("two.sided", "less", "greater"), 
                           conf.level = 0.95, ...) 
 {
@@ -337,9 +452,10 @@ var.test.cam <- function (x, y, ratio = 1, alternative = c("two.sided", "less", 
     y2 <- list(df.residual = sum(y$df.residual), residuals = sqrt(sum(var.residuals(y))*sum(y$df.residual)))
     class(x2) <- "lm"
     class(y2) <- "lm"
-    return(var.test(getLmForVarTest(x), getLmForVarTest(y), ratio, alternative, conf.level, ...))
+    return(stats::var.test(getLmForVarTest(x), getLmForVarTest(y), ratio, alternative, conf.level, ...))
 }
 
+#' @export 
 getLmForVarTest <- function(x)
 {
     x <- list(df.residual = sum(x$df.residual), residuals = sqrt(sum(var.residuals(x))*sum(x$df.residual)))
@@ -347,9 +463,11 @@ getLmForVarTest <- function(x)
     return(x)
 }
 
+#' @export 
 slim <- function(object) UseMethod("slim")
 
-slim.gam <- function(object)
+#' @export 
+slim.gam <- function(object, ...)
 {
     object$offset <- NULL
     object$model <- NULL
@@ -367,10 +485,14 @@ slim.gam <- function(object)
     return(object)
 }
 
-logLikScore.slimmed.cam <- function(object) return(object$logLikScore)
-var.residuals.slimmed.cam <- function(object) return(object$var.residuals)
+#' @export 
+logLikScore.slimmed.cam <- function(object, ...) return(object$logLikScore)
 
-slim.cam <- function(object)
+#' @export 
+var.residuals.slimmed.cam <- function(object, ...) return(object$var.residuals)
+
+#' @export 
+slim.cam <- function(object, ...)
 {
     object$var.residuals <- var.residuals(object)
     #object$logLik <- logLik(object)

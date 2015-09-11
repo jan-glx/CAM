@@ -2,7 +2,7 @@ pruning <-
 function(X, G, output = FALSE, pruneMethod = selGam, pruneMethodPars = list(cutOffPVal = 0.001, numBasisFcts = 10)) 
 {
     p <- dim(G)[1]
-    finalG <- sparseMatrix(i=integer(),j=integer(),dims=c(p,p))
+    finalG <- Matrix::sparseMatrix(i=integer(),j=integer(),dims=c(p,p))
     for(i in 1:p)
     {
         parents <- which(G[,i])

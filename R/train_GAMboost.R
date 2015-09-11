@@ -2,8 +2,8 @@ train_GAMboost <-
 function(X,y,pars = list()) #
 {
     dat <- as.data.frame(X)
-    bl <- lapply(dat, bbs)
-    gb <- mboost_fit(bl, y)
+    bl <- lapply(dat, mboost::bbs)
+    gb <- mboost::mboost_fit(bl, y)
     
     result <- list()
     result$Yfit <- gb$fitted()

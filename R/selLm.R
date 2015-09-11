@@ -1,3 +1,9 @@
+#' auxiliary file for CAM: selection based on lm
+#' 
+#' auxiliary file for CAM: selection based on lm
+#' 
+#' 
+#' @export selLm
 selLm <-
 function(X,pars = list(cutOffPVal = 0.001),output = FALSE,k)
 {

@@ -1,3 +1,17 @@
+#' auxiliary file for CAM: Computes the initial score matrix.
+#' 
+#' This is an auxiliary file for the function CAM in package CAM.
+#' 
+#' This is an auxiliary file for the function CAM in package CAM.
+#' 
+#' @note This is an auxiliary file for the function CAM in package CAM.
+#' @author Jonas Peters <jonas.peters@@tuebingen.mpg.de> and Jan Ernest
+#' <ernest@@stat.math.ethz.ch>
+#' @seealso \code{\link[CAM]{CAM}}
+#' @references P. B\"uhlmann, J. Peters, J. Ernest: CAM: Causal Additive
+#' Models, high-dimensional Order Search and Penalized Regression Annals of
+#' Statistics 42:2526-2556, 2014.
+#' @export computeScoreMatParallel
 computeScoreMatParallel <-
 function(rowParents, scoreName, X, selMat, output, node2, i, parsScore, intervMat, intervData)
 {

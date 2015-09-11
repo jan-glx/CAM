@@ -1,3 +1,9 @@
+#' auxiliary file for CAM: selection based on lasso (glmnet)
+#' 
+#' auxiliary file for CAM: selection based on lasso (glmnet)
+#' 
+#' 
+#' @export selLasso
 selLasso <-
 function(X,pars = list(),output = FALSE,k)
 {

@@ -16,8 +16,8 @@ x4 <- -0.9*sin(x3) - abs(x1) + 0.5*eps4
 
 X <- cbind(x1,x2,x3,x4)
 
-trueDAG <- sparseMatrix(i=c(3, 2, 2, 1),
-                        j=c(4, 3, 1, 4),dims=c(4,4)) 
+trueDAG <- Matrix::sparseMatrix(i=c(3, 2, 2, 1),
+                                j=c(4, 3, 1, 4),dims=c(4,4)) 
 ## x4 <- x3 <- x2 -> x1 
 ##  ^               /
 ##   \_____________/
@@ -79,9 +79,18 @@ test_that("predicting works", {
     expect_equal(cam_fits, predicted_fits)
 })
 
-test_that("dag to causal order to dag works",{
+test_that("dag to causal order to dag works", {
     causalOrder <- dagToCausalOrder(trueDAG)
     adjacency <- causalOrderToAdjacency(causalOrder)
     expect_true(all(adjacency[as.matrix(trueDAG)]))
+})
+
+
+test_that("", {
+    pathMatrixShould <- structure(c(TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, 
+                                    TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE), .Dim = c(4L, 4L))
+    expect_equal(getPathMatrix(as.matrix(trueDAG)), pathMatrixShould)
+    expect_equal(matrix(F, nrow=4, ncol=4), matrix(F, nrow=4, ncol=4))
+    expect_equal(matrix(F, nrow=0, ncol=0), matrix(F, nrow=0, ncol=0))
 })
 

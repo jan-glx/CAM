@@ -8,7 +8,7 @@ function(X,y,pars = list()) #
     yy <- as.vector(y)
     op <- options(warn=-1)
     on.exit(options(op))
-    gb <- glmboost(X,yy, center = TRUE)
+    gb <- glmnet::glmboost(X,yy, center = TRUE)
     
     result <- list()
     result$Yfit <- gb$fitted()
