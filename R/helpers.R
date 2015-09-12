@@ -26,11 +26,13 @@ causalOrderToAdjacency <- function(causalOrder)
 
 #' Check if the causal ordering of an DAG (estDAG) matches the ordering of an other DAG (trueDAG) 
 #' using their adjacency matrices
+#' @param estDAG Adjacenzy matrix of the DAG whichs order is to be checked
+#' @param trueDAG Adjacenzy matrix of the DAG which defines the set of "correct" orderings
 #' @export
 #' @return TRUE if the causal ordering matches the constrains, otherwise FALSE
 checkCausalOrder <- function(estDAG,trueDAG)
 {
-  all(estDAG[trueDAG])
+  all(as.matrix(estDAG)[as.matrix(trueDAG)])
 }
 
 

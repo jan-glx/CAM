@@ -26,9 +26,18 @@ trueDAG <- Matrix::sparseMatrix(i=c(3, 2, 2, 1),
 ## 1 0 1 0
 ## 0 0 0 1
 ## 0 0 0 0
-test_that("basic", { set.seed(1)
-    expect_equal(trueDAG, CAM(X, scoreName = "SEMGAM", variableSel = TRUE, pruning = TRUE)$Adj)
-})
+for (scoreMethod in c("SEMGAM", "SEMLINPOLY")){
+    test_that(paste0("basic:",scoreMethod), { set.seed(1)
+        expect_true(checkCausalOrder(CAM(X, scoreName = scoreMethod)$Adj, trueDAG))
+    })
+}
+
+for (scoreMethod in c("SEMGAM", "SEMLINPOLY")){
+    test_that(paste0("with Pruning and variable selection:",scoreMethod), { set.seed(1)
+        expect_equal(trueDAG, CAM(X, scoreName = scoreMethod, variableSel = TRUE, pruning = TRUE)$Adj)
+    })
+}
+
 
 test_that("order fixation", { set.seed(1)
     expect_equal(trueDAG,CAM(X,fixedOrders = c(2,1),orderFixationMethod = "force_edge", pruning=T)$Adj)

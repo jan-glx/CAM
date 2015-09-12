@@ -327,6 +327,8 @@ fitNode <- function(X, j, parents_of_j, method= "gam", pars = list(numBasisFcts 
         f <- formula(paste0(colnames(X)[j],"~ 1", paste(sprintf("+ s(%s, k=%i)", 
                                                                 colnames(X)[parents_of_j], 
                                                                 pars$numBasisFcts), collapse="")))
+    } else if (method == "poly"){
+        f <- stop("Not implemented")
     } else {
         f <- formula(paste0(colnames(X)[j],"~ 1", paste(sprintf("+%s",colnames(X)[parents_of_j]),collapse="")))
     }
@@ -369,8 +371,9 @@ cam.fit <- function(X, causalDAG=NULL, scoreName = "SEMGAM", parsScore = list(nu
             SEMSEV = {stop("This score does not work. It does not decouple.")},
             SEMIND = {stop("NOT IMPLEMENTED")},
             SEMGAM = {function(j) fitNode(X,j,causalDAG[,j], pars = parsScore)},
-            SEMLIN = {function(j) fitNode(X,j,causalDAG[,j],method="lm")},
+            SEMLIN = {function(j) fitNode(X,j,causalDAG[,j], method="lm")},
             SEMGP  = {stop("NOT IMPLEMENTED")}, 
+            SEMLINPOLY = {function(j) fitNode(X,j,causalDAG[,j], method="poly", pars=parsScore)},
             {stop("I do not know this score function.")}
         )
     nodeModels <- lapply(setNames(as.list(1:p), colnames(X)), single.fit)
