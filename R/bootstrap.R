@@ -1,12 +1,13 @@
 #' @export
 fastForward.cam <- function(object, noise)
-  {   output <- as.data.table(noise)
-  p <- object$p
-  causalOrder <- CAM::dagToCausalOrder(as.matrix(object$causalDAG))
-  for (k in causalOrder){
-    output[,k] <- predict(object$nodeModels[[k]], output) + noise[,k]
-  }
-  as.matrix(output)
+{   
+    output <- as.data.table(noise)
+    p <- object$p
+    causalOrder <- dagToCausalOrder(as.matrix(object$causalDAG))
+    for (k in causalOrder){
+        output[,k] <- predict(object$nodeModels[[k]], output) + noise[,k]
+    }
+    as.matrix(output)
 }
 
 #' @export
@@ -32,18 +33,18 @@ colwise_resample <- function(X, seed_=NULL){
 #' boot_res$pvalue
 
 bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY"){
-    full_model <- CAM(X, pruning=FALSE,orderFixationMethod="emulate_edge",scoreName=scoreName)
-    null_model <- CAM(X, pruning=FALSE,orderFixationMethod="emulate_edge",
-                  fixedOrders=fixedOrders, scoreName= scoreName)
+    full_model <- CAM(X, scoreName=scoreName)
+    null_model <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=fixedOrders, 
+                      scoreName= scoreName)
     null_fit <- cam.fit(X, null_model$Adj)
-    resid <- CAM:::residuals.cam(null_fit)
+    resid <- residuals.cam(null_fit)
     stat_matrix <- matrix(NA,ncol=3, nrow=B)
     for (b in 1:B){
         print(b)
         resid_boot <- colwise_resample(resid)
         Xboot <- fastForward.cam(null_fit, resid_boot)
-        boot_full <-  CAM(Xboot, pruning=FALSE,orderFixationMethod="emulate_edge",scoreName= scoreName)$Score
-        boot_null <-  CAM(Xboot, pruning=FALSE,orderFixationMethod="emulate_edge",
+        boot_full <-  CAM(Xboot, scoreName= scoreName)$Score
+        boot_null <-  CAM(Xboot, orderFixationMethod="emulate_edge",
                           fixedOrders=fixedOrders, scoreName= scoreName)$Score
         stat_matrix[b,1] <- boot_full
         stat_matrix[b,2] <- boot_null
