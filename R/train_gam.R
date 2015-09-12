@@ -1,4 +1,5 @@
 #' @importFrom mgcv gam
+#' @importFrom mgcv s
 train_gam <-
 function(X,y,pars = list(numBasisFcts = 10))
 {

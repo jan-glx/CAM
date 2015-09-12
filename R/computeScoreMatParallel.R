@@ -39,20 +39,21 @@ function(rowParents, scoreName, X, selMat, output, node2, i, parsScore, intervMa
             stop("NOT IMPLEMENTED YET")
         } else if(scoreName == "SEMGAM")
         {
-            mod_gam <- train_gam(X2[,parentsToCheck],X2[,node2],pars=parsScore)
-            score <- (-log(var(mod_gam$residuals)))
+            mod <- train_gam(X2[,parentsToCheck],X2[,node2],pars=parsScore)
+        } else if (scoreName == "SEMLINPOLY"){
+            mod <- train_additive_polynomial(X2[,parentsToCheck],X2[,node2],pars=parsScore)
         } else if(scoreName == "SEMLIN")
         {
-            mod_gam <- train_linear(X2[,parentsToCheck],X2[,node2])
-            score <- (-log(var(mod_gam$residuals)))
+            mod <- train_linear(X2[,parentsToCheck],X2[,node2])
         } else if(scoreName == "SEMGP")
         {
-            mod_gp <- train_gp(X2[,parentsToCheck],X2[,node2])
-            score <- (-log(var(mod_gp$residuals)))
+            mod <- train_gp(X2[,parentsToCheck],X2[,node2])
         } else
         {
             stop("I do not know this score function.")
         }
+        score <- (-log(var(mod$residuals)))
+
     } else
     {
         score <- (-Inf)
