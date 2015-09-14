@@ -4,8 +4,10 @@ random_additive_polynomial_SEM <- function(trueDAG, degree=3, seed_=1){
 
   set.seed(seed_)
   rand_poly <- function(degree){
-    coef <- rnorm(degree+1)
-    function(x){ t(sapply(x, `^`, (0:degree))) %*% coef}
+    coef <- rnorm(degree+1, 0, 1)
+    f<- function(x){ t(sapply(x, `^`, (0:degree))) %*% coef}
+    attr(f, "coef") <- coef
+    f
   }
 
   f_jk <- matrix(list(),p,p)
@@ -27,12 +29,12 @@ simulate_additive_SEM <- function(sem_object, n=500, seed_=1){
   }
 
   X <- matrix(rnorm(n*p), ncol=p) # noise
-  for(k in 1:p) {
+  for(k in dagToCausalOrder(as.matrix(sem_object$trueDAG))) {
     tmp <- mapply(do.call,
                f_jk[trueDAG[,k]>0,k],
                lapply(hsplit(X[,trueDAG[,k]>0]),list))
     if (!(is.list(tmp))) {
-      X[,k] <- X[,k] + rowSums(scale(tmp))
+      X[,k] <- X[,k] + rowSums(tmp)
     }
   }
   X
