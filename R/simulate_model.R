@@ -11,12 +11,12 @@ random_additive_polynomial_SEM <- function(trueDAG, degree=3, seed_=1){
   }
 
   f_jk <- matrix(list(),p,p)
-  f_jk[trueDAG>0] <- lapply(rep(degree,sum(trueDAG)),FUN=rand_poly)
+  f_jk[trueDAG>0] <- lapply(rep(degree,sum(trueDAG)), FUN=rand_poly)
   list(trueDAG=trueDAG, f_jk=f_jk, p=p)
 }
 
 #' @export
-simulate_additive_SEM <- function(sem_object, n=500, seed_=1){
+simulate_additive_SEM <- function(sem_object, n=500, scaling=FALSE, seed_=1){
   set.seed(seed_)
 
   p <- sem_object$p
@@ -34,7 +34,7 @@ simulate_additive_SEM <- function(sem_object, n=500, seed_=1){
                f_jk[trueDAG[,k]>0,k],
                lapply(hsplit(X[,trueDAG[,k]>0]),list))
     if (!(is.list(tmp))) {
-      X[,k] <- X[,k] + rowSums(tmp)
+      X[,k] <- X[,k] + rowSums(if(scaling) scale(tmp) else tmp)
     }
   }
   X

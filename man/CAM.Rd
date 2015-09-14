@@ -5,8 +5,8 @@
 \title{Causal Additive Model}
 \usage{
 CAM(X, scoreName = "SEMGAM", parsScore = list(numBasisFcts = 10),
-  numCores = 1, maxNumParents = min(dim(X)[2] - 1, round(dim(X)[1]/20)),
-  output = FALSE, fixedOrders = matrix(ncol = 2, nrow = 0),
+  numCores = 1, maxNumParents = ncol(X) - 1, output = FALSE,
+  fixedOrders = matrix(ncol = 2, nrow = 0),
   orderFixationMethod = "force_edge", variableSel = FALSE,
   variableSelMethod = selGamBoost,
   variableSelMethodPars = list(atLeastThatMuchSelected = 0.02,

@@ -29,7 +29,7 @@ colwise_resample <- function(X, seed_=NULL){
 #' trueDAG[matrix(c(1,3,
 #'                  2,4,
 #'                  3,5,
-#'                 4,5),ncol=2,byrow=T)] <- TRUE
+#'                  4,5),ncol=2,byrow=TRUE)] <- TRUE
 #' obj <- random_additive_polynomial_SEM(trueDAG, degree=2, seed_=1)
 #' X <- simulate_additive_SEM(obj, n=100, seed_=3)
 #' boot_res <- bootstrap.cam(X, matrix(c(2,1,1,2), nrow=2, byrow = TRUE),B=20) #two-sided null

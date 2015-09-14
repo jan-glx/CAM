@@ -7,6 +7,11 @@ using their adjacency matrices}
 \usage{
 checkCausalOrder(estDAG, trueDAG)
 }
+\arguments{
+\item{estDAG}{Adjacenzy matrix of the DAG whichs order is to be checked}
+
+\item{trueDAG}{Adjacenzy matrix of the DAG which defines the set of "correct" orderings}
+}
 \value{
 TRUE if the causal ordering matches the constrains, otherwise FALSE
 }
