@@ -95,11 +95,27 @@ test_that("dag to causal order to dag works", {
 })
 
 
-test_that("", {
+test_that("path Matrix", {
     pathMatrixShould <- structure(c(TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, 
                                     TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE), .Dim = c(4L, 4L))
     expect_equal(getPathMatrix(as.matrix(trueDAG)), pathMatrixShould)
     expect_equal(matrix(F, nrow=4, ncol=4), matrix(F, nrow=4, ncol=4))
     expect_equal(matrix(F, nrow=0, ncol=0), matrix(F, nrow=0, ncol=0))
 })
+
+test_that("bootstrap runs without errors (does not mean that it does work)", {
+    p=3
+    trueDAG <- matrix(FALSE,ncol=p, nrow=p)
+    trueDAG[matrix(c(1,2,
+                     3,3),ncol=2)] <- TRUE
+    obj <- random_additive_polynomial_SEM(trueDAG, degree=2, seed_=1)
+    X <- simulate_additive_SEM(obj, n=100, seed_=3)
+    boot_res <- bootstrap.cam(X, matrix(c(2,1,1,2), nrow=2, byrow = TRUE),B=200) #two-sided null
+    boot_res2 <- bootstrap.cam(X, matrix(c(2,1,1,2), nrow=2, byrow = TRUE),B=200, bootstrapH02 = TRUE) #two-sided null
+    expect_true(abs(boot_res$pvalue - boot_res2$pvalue) <0.05)
+    boot_res <- bootstrap.cam(X, matrix(c(3,1,1,3), nrow=2, byrow = TRUE),B=200) #two-sided null
+    boot_res2 <- bootstrap.cam(X, matrix(c(3,1,1,3), nrow=2, byrow = TRUE),B=200, bootstrapH02 = TRUE) #two-sided null
+    expect_true(abs(boot_res$pvalue - boot_res2$pvalue) <0.05)
+})
+
 
