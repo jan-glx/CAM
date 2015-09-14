@@ -136,6 +136,7 @@ function(X, scoreName = "SEMGAM",
     
     # this counter is only used if output = TRUE
     counterUpdate <- 0
+    X<-as.matrix(X)
     p <- dim(X)[2]
     
     
