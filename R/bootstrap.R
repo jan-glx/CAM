@@ -32,7 +32,7 @@ colwise_resample <- function(X, seed_=NULL){
 #' boot_res <- bootstrap.cam(X, matrix(c(2,1,1,2), nrow=2, byrow = TRUE),B=20) #two-sided null
 #' boot_res$pvalue
 bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", parametric=FALSE, 
-                          bootstrapH02 = FALSE, fast_double=FALSE, parsScore=list()){
+                          bootstrapH02 = FALSE, fast_double=FALSE, parsScore=list(), verbose=0){
     full_model <- CAM(X, scoreName=scoreName, parsScore=parsScore)
     null_model <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=fixedOrders, 
                       scoreName= scoreName,parsScore=parsScore)
@@ -50,7 +50,7 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
 
     stat_matrix <- matrix(NA,ncol=3, nrow=B)
     for (b in 1:B){
-        print(b)
+        if(verbose) print(b)
         if (bootstrapH02) {
             Xboot <- X[sample(nrow(X), nrow(X), replace=TRUE)]
             boot1_full_model <- CAM(X, scoreName=scoreName, parsScore=parsScore)
