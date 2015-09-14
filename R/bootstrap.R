@@ -53,10 +53,10 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
         if(verbose) print(b)
         if (bootstrapH02) {
             Xboot <- X[sample(nrow(X), nrow(X), replace=TRUE)]
-            boot1_full_model <- CAM(X, scoreName=scoreName, parsScore=parsScore)
-            boot1_null_model <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=fixedOrders, 
+            boot1_full_model <- CAM(Xboot, scoreName=scoreName, parsScore=parsScore)
+            boot1_null_model <- CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=fixedOrders, 
                               scoreName= scoreName,parsScore=parsScore)
-            null_fit <- cam.fit(X, boot1_null_model$Adj, scoreName=scoreName,parsScore=parsScore)
+            null_fit <- cam.fit(Xboot, boot1_null_model$Adj, scoreName=scoreName,parsScore=parsScore)
             resid <- residuals(null_fit)
             log_likelihood_ratio[b] <- boot1_full_model$Score - boot1_null_model$Score
         }
