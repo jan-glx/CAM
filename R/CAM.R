@@ -92,7 +92,7 @@ CAM <-
 function(X, scoreName = "SEMGAM", 
                           parsScore = list(numBasisFcts=10), 
                           numCores = 1, 
-                          maxNumParents = min(dim(X)[2] - 1, round(dim(X)[1]/20)),
+                          maxNumParents = ncol(X)-1,#min(dim(X)[2] - 1, round(dim(X)[1]/20)),
                           output = FALSE,
                           fixedOrders = matrix(ncol=2,nrow=0),
                           orderFixationMethod = "force_edge",
@@ -312,7 +312,7 @@ function(X, scoreName = "SEMGAM",
 }
 #' @export 
 #' @import data.table
-fitNode <- function(X, j, parents_of_j, method= "gam", pars = list(numBasisFcts = 10))
+fitNode <- function(X, j, parents_of_j, method= "gam", pars = list(numBasisFcts = 10, degree=3))
 {
     if (method=="gam")
     {
@@ -327,10 +327,12 @@ fitNode <- function(X, j, parents_of_j, method= "gam", pars = list(numBasisFcts 
         f <- formula(paste0(colnames(X)[j],"~ 1", paste(sprintf("+ s(%s, k=%i)", 
                                                                 colnames(X)[parents_of_j], 
                                                                 pars$numBasisFcts), collapse="")))
-    } else if (method == "poly"){
-        f <- stop("Not implemented")
-    } else {
+ 
+    } else if (method=="glmnet"){
         f <- formula(paste0(colnames(X)[j],"~ 1", paste(sprintf("+%s",colnames(X)[parents_of_j]),collapse="")))
+    } else if (method=="poly"){
+        f <- formula(paste0(colnames(X)[j],"~ 1", paste(sprintf("+poly(%s,degree=%i,raw=TRUE)",
+                        colnames(X)[parents_of_j], pars$degree),collapse="")))
     }
     res <- switch(method,
                   gam = {
@@ -352,7 +354,16 @@ fitNode <- function(X, j, parents_of_j, method= "gam", pars = list(numBasisFcts 
                   },
                   {
                       do.call(method, c(list(formula = f, data = X),pars))
-                  })
+                  },
+                  poly = {
+                        if (any(parents_of_j)){
+                            #res<-train_additive_polynomial(X[,parents_of_j, with=F],X[,j,with=F], pars=pars)$model
+                            res <- lm(formula=f, data=X)
+                        } else {
+                            res <- lm(as.numeric(X[,j,with=F][[1]])~ 0) # return the identity
+                        }
+                        res
+                })
     return(res)
 }
 
