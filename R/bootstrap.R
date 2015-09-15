@@ -19,6 +19,7 @@ colwise_resample <- function(X, seed_=NULL){
 }
 
 #' Bootstrap!
+#' @param method either of "two-sided" or "one-sided"
 #' @export
 #'
 #' @examples
@@ -32,9 +33,20 @@ colwise_resample <- function(X, seed_=NULL){
 #' boot_res <- bootstrap.cam(X, matrix(c(2,1,1,2), nrow=2, byrow = TRUE),B=20) #two-sided null
 #' boot_res$pvalue
 bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", parametric=FALSE, 
-                          bootstrapH02 = FALSE, fast_double=FALSE, parsScore=list(), verbose=0){
-    full_model <- CAM(X, scoreName=scoreName, parsScore=parsScore)
-    null_model <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=fixedOrders, 
+                          bootstrapH02 = FALSE, fast_double=FALSE, parsScore=list(), verbose=0,
+                          method = NULL){
+    X <- as.data.table(X)
+    fixedOrdersH0 <- fixedOrders
+    fixedOrdersOther <- matrix(nrow=0,ncol=2)
+    if(method=="two-sided") {
+        fixedOrdersH0 <- rbind(fixedOrdersH0,fixedOrdersH0[,c(2,1)])
+    }else if(method=="one-sided") {
+        fixedOrdersOther <- fixedOrdersH0[,c(2,1)]
+    } else {
+        warning("unknown method: \"",method,"\"-leaving fixedOrders as is.")
+    }
+    full_model <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersOther, scoreName=scoreName, parsScore=parsScore)
+    null_model <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersH0, 
                       scoreName= scoreName,parsScore=parsScore)
     null_fit <- cam.fit(X, null_model$Adj, scoreName=scoreName,parsScore=parsScore)
     resid <- residuals(null_fit)
@@ -53,12 +65,11 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
         if(verbose) print(b)
         if (bootstrapH02) {
             Xboot <- X[sample(nrow(X), nrow(X), replace=TRUE)]
-            boot1_full_model <- CAM(Xboot, scoreName=scoreName, parsScore=parsScore)
-            boot1_null_model <- CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=fixedOrders, 
+            boot1_full_model <- CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersOther, scoreName=scoreName, parsScore=parsScore)
+            boot1_null_model <- CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersH0, 
                               scoreName= scoreName,parsScore=parsScore)
             null_fit <- cam.fit(Xboot, boot1_null_model$Adj, scoreName=scoreName,parsScore=parsScore)
             resid <- residuals(null_fit)
-            log_likelihood_ratio[b] <- boot1_full_model$Score - boot1_null_model$Score
         }
             
         if (!parametric) {
@@ -68,20 +79,20 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
         }
         Xboot <- fastForward.cam(null_fit, resid_boot)
 
-        boot_full <-  CAM(Xboot, scoreName= scoreName, parsScore=parsScore)
+        boot_full <-  CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersOther, scoreName= scoreName, parsScore=parsScore)
         boot_null <-  CAM(Xboot, orderFixationMethod="emulate_edge",
-                          fixedOrders=fixedOrders, scoreName= scoreName, parsScore=parsScore)
+                          fixedOrders=fixedOrdersH0, scoreName= scoreName, parsScore=parsScore)
 
         stat_matrix[b,1] <- boot_full$Score
         stat_matrix[b,2] <- boot_null$Score
 
         if (fast_double){
-            second_level_stats[b] <- bootstrap.cam(Xboot, fixedOrders, B=1, scoreName=scoreName, 
+            second_level_stats[b] <- bootstrap.cam(Xboot, fixedOrdersH0, B=1, scoreName=scoreName, 
                 parametric=parametric, parsScore=parsScore)$bootstrap_samples[1,3]
         }
     }
     stat_matrix[,3] <- stat_matrix[,1]-stat_matrix[,2]
-    pvalue <- mean(log_likelihood_ratio < stat_matrix[,3])
+    pvalue <- mean(log_likelihood_ratio < stat_matrix[,3])+ mean(log_likelihood_ratio == stat_matrix[,3])/2 #mid pvalue 1. Franck, W. E. P-values For Discrete Test Statistics. Biometrical J. 28, 403–406 (1986).
     res <- list(log_likelihood_ratio=log_likelihood_ratio,
         pvalue=pvalue,
         bootstrap_samples = stat_matrix, 
@@ -89,7 +100,8 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
         null_model=null_model$Score,
         parametric=parametric, 
         bootstrapH02 = bootstrapH02, 
-        fast_double=fast_double
+        fast_double = fast_double,
+        method = method
         )
 
     if (fast_double){

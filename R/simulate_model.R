@@ -29,10 +29,10 @@ simulate_additive_SEM <- function(sem_object, n=500, scaling=FALSE, seed_=NULL){
   }
 
   X <- matrix(rnorm(n*p), ncol=p) # noise
-  for(k in dagToCausalOrder(as.matrix(sem_object$trueDAG))) {
+  for(k in dagToCausalOrder(sem_object$trueDAG)) {
     tmp <- mapply(do.call,
-               f_jk[trueDAG[,k]>0,k],
-               lapply(hsplit(X[,trueDAG[,k]>0]),list))
+               f_jk[trueDAG[,k],k],
+               lapply(hsplit(X[,trueDAG[,k]]),list))
     if (!(is.list(tmp))) {
       X[,k] <- X[,k] + rowSums(if(scaling) scale(tmp) else tmp)
     }
