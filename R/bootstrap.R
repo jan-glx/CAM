@@ -38,9 +38,9 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
     X <- as.data.table(X)
     fixedOrdersH0 <- fixedOrders
     fixedOrdersOther <- matrix(nrow=0,ncol=2)
-    if(method=="two-sided") {
+    if(!is.null(method) && method=="two-sided") {
         fixedOrdersH0 <- rbind(fixedOrdersH0,fixedOrdersH0[,c(2,1)])
-    }else if(method=="one-sided") {
+    }else if(!is.null(method) && method=="one-sided") {
         fixedOrdersOther <- fixedOrdersH0[,c(2,1)]
     } else {
         warning("unknown method: \"",method,"\"-leaving fixedOrders as is.")
