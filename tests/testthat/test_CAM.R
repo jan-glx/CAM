@@ -115,3 +115,16 @@ test_that("bootstrap test two sided V(3)", {
     boot_res <- bootstrap.cam(X, matrix(c(3,1), ncol=2),B=100, method = "two-sided")
     expect_less_than(boot_res$pvalue, 0.05)
 })
+
+test_that("bootstrap test one-sided V(3)", {
+    p=3
+    trueDAG <- matrix(FALSE,ncol=p, nrow=p)
+    trueDAG[matrix(c(1,2,
+                     3,3),ncol=2)] <- TRUE
+    obj <- random_additive_polynomial_SEM(trueDAG, degree=2, seed_=1)
+    X <- CAM::simulate_additive_SEM(obj, n=100,seed_ = 1)
+    boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(3,1),ncol=2))
+    expect_more_than(boot_res$pvalue, 0.05)
+    boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,3),ncol=2))
+    expect_less_than(boot_res$pvalue, 0.05)
+})

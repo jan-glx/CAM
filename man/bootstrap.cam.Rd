@@ -5,7 +5,11 @@
 \title{Bootstrap!}
 \usage{
 bootstrap.cam(X, fixedOrders, B = 100, scoreName = "SEMLINPOLY",
-  parametric = FALSE, fast_double = FALSE, parsScore = list())
+  parametric = FALSE, bootstrapH02 = FALSE, fast_double = FALSE,
+  parsScore = list(), verbose = 0, method = NULL)
+}
+\arguments{
+\item{method}{either of "two-sided" or "one-sided"}
 }
 \description{
 Bootstrap!
@@ -13,10 +17,8 @@ Bootstrap!
 \examples{
 p=5
 trueDAG <- matrix(FALSE,ncol=p, nrow=p)
-trueDAG[matrix(c(1,3,
-                 2,4,
-                 3,5,
-                 4,5),ncol=2,byrow=TRUE)] <- TRUE
+trueDAG[matrix(c(1,2,3,4,
+                 3,4,5,5),ncol=2)] <- TRUE
 obj <- random_additive_polynomial_SEM(trueDAG, degree=2, seed_=1)
 X <- simulate_additive_SEM(obj, n=100, seed_=3)
 boot_res <- bootstrap.cam(X, matrix(c(2,1,1,2), nrow=2, byrow = TRUE),B=20) #two-sided null

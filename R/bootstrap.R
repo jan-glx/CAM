@@ -1,4 +1,4 @@
-#' @
+#' why would this be exported?
 #' @export
 fastForward.cam <- function(object, noise)
 {   
@@ -10,6 +10,7 @@ fastForward.cam <- function(object, noise)
     return(output)
 }
 
+#' this should not be exported
 #' @export
 colwise_resample <- function(X, seed_=NULL){
     if (!is.null(seed_)) {seed.bak <- .GlobalEnv$.Random.seed; set.seed(seed_)}
@@ -109,5 +110,45 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
         double_pvalue <- mean(quant < stat_matrix[,3])
         res$double_pvalue <- double_pvalue
     }
+    return(res)
+}
+
+
+#' H0: there is no causal effekt from i to j
+#' @param lambda  use 0.5 for mid pvalue  see 1. Franck, W. E. P-values For Discrete Test Statistics. Biometrical J. 28, 403–406 (1986).
+#' @export
+bootstrap.cam.one_sided <- function(X, ij, B=100, scoreName="SEMLINPOLY", parsScore=list(degree=3), verbose=0, lambda=1){
+    X <- as.data.table(X)
+    ji <- ij[,c(2,1), drop = FALSE]
+    cam_no_tce_from_j_to_i <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=ij, scoreName= scoreName, parsScore=parsScore)
+    cam_no_tce_from_i_to_j <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=ji, scoreName=scoreName, parsScore=parsScore)
+    null_fit <- cam.fit(X, cam_no_tce_from_i_to_j$Adj, scoreName=scoreName, parsScore=parsScore)
+    resid <- residuals(null_fit)
+    Z <- cam_no_tce_from_j_to_i$Score-cam_no_tce_from_i_to_j$Score
+    
+    stat_matrix <- matrix(NA,ncol=3, nrow=B)
+    for (b in 1:B){
+        resid_boot <- colwise_resample(resid)
+        Xboot <- fastForward.cam(null_fit, resid_boot)
+        
+        boot_cam_no_tce_from_j_to_i <-  
+            CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=ij, scoreName= scoreName, parsScore=parsScore)
+        boot_cam_no_tce_from_i_to_j <-  
+            CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=ji, scoreName= scoreName, parsScore=parsScore)
+        stat_matrix[b,1] <- boot_cam_no_tce_from_j_to_i$Score
+        stat_matrix[b,2] <- boot_cam_no_tce_from_i_to_j$Score
+    }
+    stat_matrix[,3] <- stat_matrix[,1]-stat_matrix[,2]
+    pvalue <- mean(Z < stat_matrix[,3]) + lambda*mean(Z == stat_matrix[,3])
+    res <- list(Z = Z,
+                pvalue = pvalue,
+                bootstrap_samples = stat_matrix, 
+                cam_no_tce_from_j_to_i = cam_no_tce_from_j_to_i$Score, 
+                cam_no_tce_from_i_to_j = cam_no_tce_from_i_to_j$Score,
+                B = B, 
+                parsScore = parsScore, 
+                scoreName = scoreName,
+                lambda = lambda
+    )
     return(res)
 }
