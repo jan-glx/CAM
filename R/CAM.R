@@ -210,10 +210,12 @@ function(X, scoreName = "SEMGAM",
     pathMatrix <- matrix(FALSE,p,p)
     diag(pathMatrix) <- TRUE
     if (orderFixationMethod == "emulate_edge"){
-      # prevent addition of a edge from j to i
-      computeScoreMatTmp$scoreMat[fixedOrders[,2:1,drop=F]] <- -Inf
+      fixedOrdersMatrix <- matrix(FALSE, p, p)
+      fixedOrdersMatrix[fixedOrders] <- TRUE
       # prevent addition of edges from DE(j) to {AC(i),i} and {DE(j),j} to {AC(i)} where (i,j) is a row of fixedOrders
-      pathMatrix[fixedOrders] <- TRUE
+      pathMatrix[getPathMatrix(fixedOrdersMatrix)] <- TRUE
+      # prevent addition of a edge from j to i
+      computeScoreMatTmp$scoreMat[t(pathMatrix)] <- -Inf
     }
         
     Adj <- Matrix::sparseMatrix(i=integer(),j=integer(),dims=c(p,p))
