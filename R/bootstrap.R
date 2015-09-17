@@ -117,7 +117,7 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
 #' H0: there is no causal effekt from i to j
 #' @param lambda  use 0.5 for mid pvalue  see 1. Franck, W. E. P-values For Discrete Test Statistics. Biometrical J. 28, 403–406 (1986).
 #' @export
-bootstrap.cam.one_sided <- function(X, ij, B=100, scoreName="SEMLINPOLY", parsScore=list(degree=3), verbose=0, lambda=1){
+bootstrap.cam.one_sided <- function(X, ij, B=100, scoreName="SEMLINPOLY", parsScore=list(degree=3), verbose=0, lambda=1, bs_lvl0=FALSE){
     X <- as.data.table(X)
     ji <- ij[,c(2,1), drop = FALSE]
     cam_no_tce_from_j_to_i <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=ij, scoreName= scoreName, parsScore=parsScore)
@@ -128,6 +128,12 @@ bootstrap.cam.one_sided <- function(X, ij, B=100, scoreName="SEMLINPOLY", parsSc
     
     stat_matrix <- matrix(NA,ncol=3, nrow=B)
     for (b in 1:B){
+        if(bs_lvl0){
+            Xboot0 <- X[sample(nrow(X), nrow(X), replace=TRUE)]
+            boot0_cam_no_tce_from_i_to_j <- CAM(Xboot0, orderFixationMethod="emulate_edge", fixedOrders=ji, scoreName=scoreName, parsScore=parsScore)
+            null_fit <- cam.fit(Xboot0, boot0_cam_no_tce_from_i_to_j$Adj, scoreName=scoreName, parsScore=parsScore)
+            resid <- residuals(null_fit)
+        }
         resid_boot <- colwise_resample(resid)
         Xboot <- fastForward.cam(null_fit, resid_boot)
         
@@ -148,7 +154,8 @@ bootstrap.cam.one_sided <- function(X, ij, B=100, scoreName="SEMLINPOLY", parsSc
                 B = B, 
                 parsScore = parsScore, 
                 scoreName = scoreName,
-                lambda = lambda
+                lambda = lambda,
+                bs_lvl0 = bs_lvl0
     )
     return(res)
 }
