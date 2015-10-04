@@ -1,7 +1,7 @@
 
 context("simple example")
 
-#library(CAM);library(Matrix) # in case you want to test by hand
+#   library(CAM) # in case you want to test by hand
 set.seed(1)
 n <- 500
 eps1<-rnorm(n)
@@ -16,8 +16,8 @@ x4 <- -0.9*sin(x3) - abs(x1) + 0.5*eps4
 
 X <- cbind(x1,x2,x3,x4)
 
-trueDAG <- Matrix::sparseMatrix(i=c(3, 2, 2, 1),
-                                j=c(4, 3, 1, 4),dims=c(4,4)) 
+trueDAG <- edges2adj(i=c(3, 2, 2, 1),
+                     j=c(4, 3, 1, 4)) 
 ## x4 <- x3 <- x2 -> x1 
 ##  ^               /
 ##   \_____________/
@@ -26,18 +26,23 @@ trueDAG <- Matrix::sparseMatrix(i=c(3, 2, 2, 1),
 ## 1 0 1 0
 ## 0 0 0 1
 ## 0 0 0 0
-for (scoreMethod in c("SEMGAM", "SEMLINPOLY")){
-    test_that(paste0("basic:",scoreMethod), { set.seed(1)
-        expect_true(checkCausalOrder(CAM(X, scoreName = scoreMethod)$Adj, trueDAG))
+for (nodeModelName in c("gam", "poly", "lmboost")){
+    test_that(paste0("basic:",nodeModelName), { set.seed(1)
+        expect_true(checkCausalOrder(CAM(X, nodeModelName = nodeModelName)$Adj, trueDAG))
     })
 }
+test_that("linear runs without errors:", { set.seed(1)
+    CAM(X, nodeModelName = "linear")
+})
 
-for (scoreMethod in c("SEMGAM", "SEMLINPOLY")){
-    test_that(paste0("with Pruning and variable selection:",scoreMethod), { set.seed(1)
-        expect_equal(trueDAG, CAM(X, scoreName = scoreMethod, variableSel = TRUE, pruning = TRUE)$Adj)
+for (nodeModelName in c("gam", "poly", "lmboost")){
+    test_that(paste0("with Pruning and variable selection:",nodeModelName), { set.seed(1)
+        expect_equal(trueDAG, CAM(X, nodeModelName = nodeModelName, variableSel = TRUE, pruning = TRUE)$Adj)
     })
 }
-
+test_that("linear runs without errors with pruning and PNS:", { set.seed(1)
+    CAM(X, nodeModelName = "linear", variableSel = TRUE, pruning = TRUE)
+})
 
 test_that("order fixation", { set.seed(1)
     expect_equal(trueDAG,CAM(X,fixedOrders = c(2,1),orderFixationMethod = "force_edge", pruning=TRUE)$Adj)
@@ -46,14 +51,13 @@ test_that("order fixation", { set.seed(1)
     expect_true(!all(trueDAG==CAM(X,fixedOrders = c(1,2),orderFixationMethod = "emulate_edge", pruning=TRUE)$Adj))
 })
 
+
+
 test_that("fit model given DAG", { set.seed(1)
     estDAG <- CAM(X, variableSel = TRUE, pruning = TRUE)
     cam1 <- cam.fit(X, estDAG$Adj) 
-    expect_less_than(logLikScore(predict(cam1,X)), estDAG$Score+0.00000001)
-    
-    estDAG <- CAM(X, variableSel = FALSE, pruning = FALSE)
-    cam2 <- cam.fit(X, estDAG$Adj) 
-    expect_equal(estDAG$Score, logLikScore(predict(cam2,X)))
+    expect_equal(logLik(cam1), estDAG$score)
+    expect_equal(logLik(predict(cam1, X)), estDAG$score)
 })
 
 test_that("var test positive", { set.seed(1)

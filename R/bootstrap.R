@@ -33,8 +33,8 @@ colwise_resample <- function(X, seed_=NULL){
 #' X <- simulate_additive_SEM(obj, n=100, seed_=3)
 #' boot_res <- bootstrap.cam(X, matrix(c(2,1,1,2), nrow=2, byrow = TRUE),B=20) #two-sided null
 #' boot_res$pvalue
-bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", parametric=FALSE, 
-                          bootstrapH02 = FALSE, fast_double=FALSE, parsScore=list(), verbose=0,
+bootstrap.cam <- function(X, fixedOrders, B=100, nodeModelName=NULL, parametric=FALSE, 
+                          bootstrapH02 = FALSE, fast_double=FALSE, nodeModelPars=NULL, verbose=0,
                           method = NULL){
     X <- as.data.table(X)
     fixedOrdersH0 <- fixedOrders
@@ -46,12 +46,12 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
     } else {
         warning("unknown method: \"",method,"\"-leaving fixedOrders as is.")
     }
-    full_model <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersOther, scoreName=scoreName, parsScore=parsScore)
+    full_model <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersOther, nodeModelName=nodeModelName, nodeModelPars=nodeModelPars)
     null_model <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersH0, 
-                      scoreName= scoreName,parsScore=parsScore)
-    null_fit <- cam.fit(X, null_model$Adj, scoreName=scoreName,parsScore=parsScore)
+                      nodeModelName= nodeModelName, nodeModelPars = nodeModelPars)
+    null_fit <- cam.fit(X, null_model$Adj, nodeModelName=nodeModelName, nodeModelPars = nodeModelPars)
     resid <- residuals(null_fit)
-    log_likelihood_ratio <- full_model$Score-null_model$Score
+    log_likelihood_ratio <- full_model$score-null_model$score
 
     if (parametric){
       sds <- lapply(resid, sd)
@@ -66,10 +66,10 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
         if(verbose) print(b)
         if (bootstrapH02) {
             Xboot <- X[sample(nrow(X), nrow(X), replace=TRUE)]
-            boot1_full_model <- CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersOther, scoreName=scoreName, parsScore=parsScore)
+            boot1_full_model <- CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersOther, nodeModelName=nodeModelName, nodeModelPars=nodeModelPars)
             boot1_null_model <- CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersH0, 
-                              scoreName= scoreName,parsScore=parsScore)
-            null_fit <- cam.fit(Xboot, boot1_null_model$Adj, scoreName=scoreName,parsScore=parsScore)
+                              nodeModelName= nodeModelName,nodeModelPars=nodeModelPars)
+            null_fit <- cam.fit(Xboot, boot1_null_model$Adj, nodeModelName=nodeModelName,nodeModelPars=nodeModelPars)
             resid <- residuals(null_fit)
         }
             
@@ -80,16 +80,16 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
         }
         Xboot <- fastForward.cam(null_fit, resid_boot)
 
-        boot_full <-  CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersOther, scoreName= scoreName, parsScore=parsScore)
+        boot_full <-  CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=fixedOrdersOther, nodeModelName= nodeModelName, nodeModelPars=nodeModelPars)
         boot_null <-  CAM(Xboot, orderFixationMethod="emulate_edge",
-                          fixedOrders=fixedOrdersH0, scoreName= scoreName, parsScore=parsScore)
+                          fixedOrders=fixedOrdersH0, nodeModelName= nodeModelName, nodeModelPars=nodeModelPars)
 
-        stat_matrix[b,1] <- boot_full$Score
-        stat_matrix[b,2] <- boot_null$Score
+        stat_matrix[b,1] <- boot_full$score
+        stat_matrix[b,2] <- boot_null$score
 
         if (fast_double){
-            second_level_stats[b] <- bootstrap.cam(Xboot, fixedOrdersH0, B=1, scoreName=scoreName, 
-                parametric=parametric, parsScore=parsScore)$bootstrap_samples[1,3]
+            second_level_stats[b] <- bootstrap.cam(Xboot, fixedOrdersH0, B=1, nodeModelName=nodeModelName, 
+                parametric=parametric, nodeModelPars=nodeModelPars)$bootstrap_samples[1,3]
         }
     }
     stat_matrix[,3] <- stat_matrix[,1]-stat_matrix[,2]
@@ -97,8 +97,8 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
     res <- list(log_likelihood_ratio=log_likelihood_ratio,
         pvalue=pvalue,
         bootstrap_samples = stat_matrix, 
-        full_model=full_model$Score, 
-        null_model=null_model$Score,
+        full_model=full_model$score, 
+        null_model=null_model$score,
         parametric=parametric, 
         bootstrapH02 = bootstrapH02, 
         fast_double = fast_double,
@@ -114,48 +114,54 @@ bootstrap.cam <- function(X, fixedOrders, B=100, scoreName="SEMLINPOLY", paramet
 }
 
 
+#' Test for the existence of a total causal effect from node i to node j
 #' H0: there is no causal effekt from i to j
+#' @param X data used for 
 #' @param lambda  use 0.5 for mid pvalue  see 1. Franck, W. E. P-values For Discrete Test Statistics. Biometrical J. 28, 403–406 (1986).
 #' @export
-bootstrap.cam.one_sided <- function(X, ij, B=100, scoreName="SEMLINPOLY", parsScore=list(degree=3), verbose=0, lambda=1, bs_lvl0=FALSE){
+bootstrap.cam.one_sided <- function(X, ij, B=100, nodeModelName=NULL, nodeModelPars=NULL, 
+                                    verbose=0, lambda=1, bs_lvl0=FALSE, mode=c("H0: i -/->j","H0: i-->j")){
     X <- as.data.table(X)
+    mode <- match.arg(mode) 
     ji <- ij[,c(2,1), drop = FALSE]
-    cam_no_tce_from_j_to_i <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=ij, scoreName= scoreName, parsScore=parsScore)
-    cam_no_tce_from_i_to_j <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=ji, scoreName=scoreName, parsScore=parsScore)
-    null_fit <- cam.fit(X, cam_no_tce_from_i_to_j$Adj, scoreName=scoreName, parsScore=parsScore)
+    cam_no_tce_from_j_to_i <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=ij, nodeModelName= nodeModelName, nodeModelPars=nodeModelPars)
+    cam_no_tce_from_i_to_j <- CAM(X, orderFixationMethod="emulate_edge", fixedOrders=ji, nodeModelName=nodeModelName, nodeModelPars=nodeModelPars)
+    null_fit <- cam.fit(X, if(mode=="H0: i -/->j") cam_no_tce_from_i_to_j$Adj else cam_no_tce_from_j_to_i$Adj,
+                        nodeModelName=nodeModelName, nodeModelPars=nodeModelPars)
     resid <- residuals(null_fit)
-    Z <- cam_no_tce_from_j_to_i$Score-cam_no_tce_from_i_to_j$Score
+    Z <- cam_no_tce_from_j_to_i$score-cam_no_tce_from_i_to_j$score
     
     stat_matrix <- matrix(NA,ncol=3, nrow=B)
     for (b in 1:B){
         if(bs_lvl0){
             Xboot0 <- X[sample(nrow(X), nrow(X), replace=TRUE)]
-            boot0_cam_no_tce_from_i_to_j <- CAM(Xboot0, orderFixationMethod="emulate_edge", fixedOrders=ji, scoreName=scoreName, parsScore=parsScore)
-            null_fit <- cam.fit(Xboot0, boot0_cam_no_tce_from_i_to_j$Adj, scoreName=scoreName, parsScore=parsScore)
+            boot0_cam_no_tce_from_i_to_j <- CAM(Xboot0, orderFixationMethod="emulate_edge", fixedOrders=ji, nodeModelName=nodeModelName, nodeModelPars=nodeModelPars)
+            null_fit <- cam.fit(Xboot0, boot0_cam_no_tce_from_i_to_j$Adj, nodeModelName=nodeModelName, nodeModelPars=nodeModelPars)
             resid <- residuals(null_fit)
         }
         resid_boot <- colwise_resample(resid)
         Xboot <- fastForward.cam(null_fit, resid_boot)
         
         boot_cam_no_tce_from_j_to_i <-  
-            CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=ij, scoreName= scoreName, parsScore=parsScore)
+            CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=ij, nodeModelName = nodeModelName, nodeModelPars = nodeModelPars)
         boot_cam_no_tce_from_i_to_j <-  
-            CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=ji, scoreName= scoreName, parsScore=parsScore)
-        stat_matrix[b,1] <- boot_cam_no_tce_from_j_to_i$Score
-        stat_matrix[b,2] <- boot_cam_no_tce_from_i_to_j$Score
+            CAM(Xboot, orderFixationMethod="emulate_edge", fixedOrders=ji, nodeModelName = nodeModelName, nodeModelPars = nodeModelPars)
+        stat_matrix[b,1] <- boot_cam_no_tce_from_j_to_i$score
+        stat_matrix[b,2] <- boot_cam_no_tce_from_i_to_j$score
     }
     stat_matrix[,3] <- stat_matrix[,1]-stat_matrix[,2]
-    pvalue <- mean(Z < stat_matrix[,3]) + lambda*mean(Z == stat_matrix[,3])
+    pvalue <- mean(if(mode=="H0: i -/->j") Z < stat_matrix[,3] else Z > stat_matrix[,3]) + lambda*mean(Z == stat_matrix[,3])
     res <- list(Z = Z,
                 pvalue = pvalue,
                 bootstrap_samples = stat_matrix, 
-                cam_no_tce_from_j_to_i = cam_no_tce_from_j_to_i$Score, 
-                cam_no_tce_from_i_to_j = cam_no_tce_from_i_to_j$Score,
+                cam_no_tce_from_j_to_i = cam_no_tce_from_j_to_i$score, 
+                cam_no_tce_from_i_to_j = cam_no_tce_from_i_to_j$score,
                 B = B, 
-                parsScore = parsScore, 
-                scoreName = scoreName,
+                nodeModelPars = nodeModelPars, 
+                nodeModelName = nodeModelName,
                 lambda = lambda,
-                bs_lvl0 = bs_lvl0
+                bs_lvl0 = bs_lvl0,
+                mode = mode
     )
     return(res)
 }

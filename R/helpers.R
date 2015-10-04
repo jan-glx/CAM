@@ -35,6 +35,20 @@ checkCausalOrder <- function(estDAG,trueDAG)
   all(as.matrix(estDAG)[as.matrix(trueDAG)])
 }
 
+#' compute adjacency matrix form edges
+#' @export
+edges2adj <- function(i, j, p=max(c(i,j))) {
+    adj <- matrix(FALSE, p, p)
+    adj[cbind(i, j)] <- TRUE
+    return(adj)
+}
+
+#' Turn a adjacency matrix into a matrix of edges
+#' @note equivalent to which(adj, arr.ind = T)
+#' @param adj adjacency matrix
+#' @return m x 2 matix where each row r denotes an edge from r[,1] to r[,2] and m is the number of edges in adj
+#' @export
+adj2edges <- function(adj) which(adj, arr.ind = T)
 
 
 #' Compute the path matrix of a graph G from the adjacency matrix of G

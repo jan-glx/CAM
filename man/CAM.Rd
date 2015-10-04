@@ -4,18 +4,43 @@
 \alias{CAM}
 \title{Causal Additive Model}
 \usage{
-CAM(X, scoreName = "SEMGAM", parsScore = list(numBasisFcts = 10),
-  numCores = 1, maxNumParents = ncol(X) - 1, output = FALSE,
-  fixedOrders = matrix(ncol = 2, nrow = 0),
-  orderFixationMethod = "force_edge", variableSel = FALSE,
-  variableSelMethod = selGamBoost,
-  variableSelMethodPars = list(atLeastThatMuchSelected = 0.02,
-  atMostThatManyNeighbors = 10), pruning = FALSE, pruneMethod = selGam,
-  pruneMethodPars = list(cutOffPVal = 0.001, numBasisFcts = 10),
-  intervData = FALSE, intervMat = NA)
+CAM(X, nodeModelName = c("gam", "lasso", "poly", "linear", "lmboost"),
+  scoreFunction = logLik, nodeModelPars = NULL, maxNumParents = ncol(X) -
+  1, fixedOrders = matrix(ncol = 2, nrow = 0),
+  orderFixationMethod = c("force_edge", "emulate_edge", "free"),
+  variableSel = FALSE, pnsMethod = NULL, pnsModelPars = NULL,
+  pnsSelectionPars = NULL, pruning = FALSE, pruneMethod = NULL,
+  pruneModelPars = NULL, pruneSelectionPars = NULL, intervData = FALSE,
+  intervMat = NULL, numCores = 1, verbose = FALSE)
 }
 \arguments{
 \item{X}{nxp matrix of training inputs (n data points, p dimensions)}
+
+\item{maxNumParents}{specifies the maximal number of parents that are
+allowed in the model.}
+
+\item{variableSel}{specifies whether initial variable selection (Step 1 of
+CAM algorithm) shall be performed (TRUE) or not (FALSE). Initial variable
+selection reduces the number of possible parents for a given node and
+therefore enables computing the causal structure for large p.}
+
+\item{pruning}{specifies whether pruning (Step 3 of CAM algorithm) shall be
+performed (TRUE) or not (FALSE). Pruning reduces the number of edges in the
+estimated causal structure.}
+
+\item{pruneMethod}{specifies the method used for the pruning step. Default
+is selGAM which is based on the gam() function from the mgcv package.}
+
+\item{intervData}{boolean that indicates whether we use interventional data.}
+
+\item{intervMat}{the matrix intervMat has the same dimension as X. entry
+(i,j) == TRUE indicates that in experiment i, variable j has been intervened
+on.}
+
+\item{numCores}{specifies the number of cores that can be used for
+computation.}
+
+\item{verbose}{shall verbose be printed to the console (TRUE/FALSE)}
 
 \item{scoreName}{specifies the model type which is used to compute the
 score. Default is "SEMGAM" which assumes a generalized additive model class.
@@ -23,19 +48,6 @@ Other options include "SEMLIN" which fits a linear model.}
 
 \item{parsScore}{additional parameters can be supported to the score
 function.}
-
-\item{numCores}{specifies the number of cores that can be used for
-computation.}
-
-\item{maxNumParents}{specifies the maximal number of parents that are
-allowed in the model.}
-
-\item{output}{shall output be printed to the console (TRUE/FALSE)}
-
-\item{variableSel}{specifies whether initial variable selection (Step 1 of
-CAM algorithm) shall be performed (TRUE) or not (FALSE). Initial variable
-selection reduces the number of possible parents for a given node and
-therefore enables computing the causal structure for large p.}
 
 \item{variableSelMethod}{specifies the method that is used for variable
 selection. Default is selGamBoost which uses the gamboost function from
@@ -46,20 +58,7 @@ glmnet.}
 \item{variableSelMethodPars}{optional parameters to modify settings of the
 selection method.}
 
-\item{pruning}{specifies whether pruning (Step 3 of CAM algorithm) shall be
-performed (TRUE) or not (FALSE). Pruning reduces the number of edges in the
-estimated causal structure.}
-
-\item{pruneMethod}{specifies the method used for the pruning step. Default
-is selGAM which is based on the gam() function from the mgcv package.}
-
 \item{pruneMethodPars}{optional parameters to tune the pruning step.}
-
-\item{intervData}{boolean that indicates whether we use interventional data.}
-
-\item{intervMat}{the matrix intervMat has the same dimension as X. entry
-(i,j) == TRUE indicates that in experiment i, variable j has been intervened
-on.}
 }
 \value{
 list of attributes of the final estimated causal structure
@@ -100,7 +99,7 @@ trueDAG <- cbind(c(0,1,0,0),c(0,0,0,0),c(0,1,0,0),c(1,0,1,0))
 ## 0 0 0 1
 ## 0 0 0 0
 
-estDAG <- CAM(X, scoreName = "SEMGAM", numCores = 1, output = TRUE, variableSel = FALSE,
+estDAG <- CAM(X, scoreName = "SEMGAM", numCores = 1, verbose = TRUE, variableSel = FALSE,
               pruning = TRUE, pruneMethod = selGam, pruneMethodPars = list(cutOffPVal = 0.001))
 
 cat("true DAG:\\n")

@@ -4,9 +4,9 @@
 \alias{bootstrap.cam}
 \title{Bootstrap!}
 \usage{
-bootstrap.cam(X, fixedOrders, B = 100, scoreName = "SEMLINPOLY",
+bootstrap.cam(X, fixedOrders, B = 100, nodeModelName = NULL,
   parametric = FALSE, bootstrapH02 = FALSE, fast_double = FALSE,
-  parsScore = list(), verbose = 0, method = NULL)
+  nodeModelPars = NULL, verbose = 0, method = NULL)
 }
 \arguments{
 \item{method}{either of "two-sided" or "one-sided"}
