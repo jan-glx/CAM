@@ -51,13 +51,16 @@ test_that("order fixation", { set.seed(1)
     expect_true(!all(trueDAG==CAM(X,fixedOrders = c(1,2),orderFixationMethod = "emulate_edge", pruning=TRUE)$Adj))
 })
 
-
-
-test_that("fit model given DAG", { set.seed(1)
-    estDAG <- CAM(X, variableSel = TRUE, pruning = TRUE)
+test_that("logLik CAM equal to logLik cam.fit", { set.seed(1)
+    estDAG <- CAM(X, variableSel = TRUE, pruning = FALSE)
     cam1 <- cam.fit(X, estDAG$Adj) 
-    expect_equal(logLik(cam1), estDAG$score)
-    expect_equal(logLik(predict(cam1, X)), estDAG$score)
+    expect_equal(as.numeric(logLik(cam1)), estDAG$score)
+    expect_equal(as.numeric(logLik(predict(cam1, X))), estDAG$score)
+})
+
+test_that("cam.fit() equal to predict(cam.fit())", { set.seed(1)
+    cam1 <- cam.fit(X, trueDAG) 
+    expect_equal(as.numeric(logLik(predict(cam1, X))), as.numeric(logLik(cam1)))
 })
 
 test_that("var test positive", { set.seed(1)
@@ -107,13 +110,16 @@ test_that("path Matrix", {
     expect_equal(matrix(F, nrow=0, ncol=0), matrix(F, nrow=0, ncol=0))
 })
 
+# simpler DAG for boostrap tests -------------------------------------------------------------------
+
+p=3
+trueDAG <- matrix(FALSE,ncol=p, nrow=p)
+trueDAG[matrix(c(1,2,
+                 3,3),ncol=2)] <- TRUE
+obj <- random_additive_polynomial_SEM(trueDAG, degree=2, seed_=1)
+X <- CAM::simulate_additive_SEM(obj, n=100,seed_ = 1)
+
 test_that("bootstrap test two sided V(3)", {
-    p=3
-    trueDAG <- matrix(FALSE,ncol=p, nrow=p)
-    trueDAG[matrix(c(1,2,
-                     3,3),ncol=2)] <- TRUE
-    obj <- random_additive_polynomial_SEM(trueDAG, degree=2, seed_=1)
-    X <- CAM::simulate_additive_SEM(obj, n=100,seed_ = 1)
     boot_res <- bootstrap.cam(X, matrix(c(2,1), ncol=2),B=100, method = "two-sided") 
     expect_more_than(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam(X, matrix(c(3,1), ncol=2),B=100, method = "two-sided")
@@ -121,12 +127,6 @@ test_that("bootstrap test two sided V(3)", {
 })
 
 test_that("bootstrap test one-sided V(3)", {
-    p=3
-    trueDAG <- matrix(FALSE,ncol=p, nrow=p)
-    trueDAG[matrix(c(1,2,
-                     3,3),ncol=2)] <- TRUE
-    obj <- random_additive_polynomial_SEM(trueDAG, degree=2, seed_=1)
-    X <- CAM::simulate_additive_SEM(obj, n=100,seed_ = 1)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(3,1),ncol=2))
     expect_more_than(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,2),ncol=2))
@@ -136,12 +136,6 @@ test_that("bootstrap test one-sided V(3)", {
 })
 
 test_that("bootstrap test one-sided V(3) lvl0", {
-    p=3
-    trueDAG <- matrix(FALSE,ncol=p, nrow=p)
-    trueDAG[matrix(c(1,2,
-                     3,3),ncol=2)] <- TRUE
-    obj <- random_additive_polynomial_SEM(trueDAG, degree=2, seed_=1)
-    X <- CAM::simulate_additive_SEM(obj, n=100,seed_ = 1)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(3,1),ncol=2), bs_lvl0 = TRUE)
     expect_more_than(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,3),ncol=2), bs_lvl0 = TRUE)
