@@ -99,8 +99,7 @@ trueDAG <- cbind(c(0,1,0,0),c(0,0,0,0),c(0,1,0,0),c(1,0,1,0))
 ## 0 0 0 1
 ## 0 0 0 0
 
-estDAG <- CAM(X, scoreName = "SEMGAM", numCores = 1, verbose = TRUE, variableSel = FALSE,
-              pruning = TRUE, pruneMethod = selGam, pruneMethodPars = list(cutOffPVal = 0.001))
+estDAG <- CAM(X, pruning = TRUE)
 
 cat("true DAG:\\n")
 show(trueDAG)
