@@ -1,6 +1,9 @@
+#' Calculate a causal order of a DAG \code{causalDAG}
+#' 
+#' @param causalDAG Adjacency matrix of the DAG whose order is to be computed.
+#' @return \eqn{\pi}(\code{causalDAG})
 #' @export 
-dagToCausalOrder <- function(causalDAG)
-{
+dagToCausalOrder <- function(causalDAG) {
     causalDAG <- as.matrix(causalDAG)
     p <- nrow(causalDAG)
     idx <- 1:p
@@ -11,28 +14,43 @@ dagToCausalOrder <- function(causalDAG)
         causalDAG <- causalDAG[-sink_idx,-sink_idx, drop=F]
         idx <- idx[-sink_idx]
     }
-    causalOrder
+    order(causalOrder)
 }
 
+#' Calculate adjacency matrix of the fully connected DAG corresponiding to a causal order
+#' @param causalOrder Vector of length \eqn{p} where the \eqn{i}'th element is \eqn{\pi(i)}.
 #' @export 
-causalOrderToAdjacency <- function(causalOrder)
-{
+causalOrderToAdjacency <- function(causalOrder) {
     p <- length(causalOrder)
-    adjacency <- matrix(FALSE,p,p)
-    adjacency[row(adjacency) < col(adjacency)] <- TRUE
-    adjacency[causalOrder,causalOrder]
+    return(outer(causalOrder, causalOrder, '<'))
 }
 
 
-#' Check if the causal ordering of an DAG (estDAG) matches the ordering of an other DAG (trueDAG) 
-#' using their adjacency matrices
-#' @param estDAG Adjacenzy matrix of the DAG whichs order is to be checked
-#' @param trueDAG Adjacenzy matrix of the DAG which defines the set of "correct" orderings
+#' Check if there is causal ordering compatible with both of two DAGs
+#' \eqn{\exists \pi \in \Pi(G) \cup \Pi(H)}
+#' @param G, H Adjacenzy matrices of the two DAGs.
+#' @export
+#' @return TRUE if there is causal a ordering compatible with both DAGs
+existsCompatibleCausalOrder <- function(G, H) {
+  !any(xor(getPathMatrix(G),t(getPathMatrix(H))))
+}
+
+#' Check if all causal orderings of a DAG \code{G} compatible with DAG \code{H}
+#' \eqn{\pi \in \Pi(H) \forall \pi \in \Pi(G)}
+#' @param G, H Adjacenzy matrices of the two DAGs.
+#' @export
+#' @return TRUE if there is causal a ordering compatible with both DAGs
+areAllCausalOrdersCompatible <- function(G, H) {
+    all(getPathMatrix(G)[as.matrix(H)])
+}
+
+#' Get compatible causal order
+#' @param estDAG Adjacenzy matrix of the DAG whichs order is to be checked.
+#' @param trueDAG Adjacenzy matrix of the DAG which defines the set of "correct" orderings.
 #' @export
 #' @return TRUE if the causal ordering matches the constrains, otherwise FALSE
-checkCausalOrder <- function(estDAG,trueDAG)
-{
-  all(as.matrix(estDAG)[as.matrix(trueDAG)])
+getCompatibleCausalOrder <- function(estDAG,trueDAG) {
+    dagToCausalOrder(as.matrix(G)|t(as.matrix(H)))
 }
 
 #' compute adjacency matrix form edges

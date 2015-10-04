@@ -1,3 +1,26 @@
+quick <- Sys.getenv("USERNAME") != "jan" && FALSE
+
+are_causal_orders_compatible_to <- function(trueDAG) {
+    s_trueDAG <- substitute(trueDAG)
+    function(estDAG) {
+        s_estDAG <- substitute(estDAG)
+        expectation(areAllCausalOrdersCompatible(estDAG, trueDAG), 
+                    paste("there is a causal order of ", s_estDAG, "\n",
+                          paste(capture.output(estDAG), collapse="\n"),
+                          "\n not compatible with ", s_trueDAG, "\n",
+                          paste(capture.output(trueDAG), collapse="\n")
+                    ),
+                    paste("all orders of", s_estDAG, " are compatible with",  s_trueDAG)
+        )
+    }
+}
+
+expect_causalOrders_compatible_to <- function(object, trueDAG, info = NULL, label = NULL) {
+    if (is.null(label)) {
+        label <- testthat:::find_expr("object")
+    }
+    expect_that(object, are_causal_orders_compatible_to(trueDAG))
+}
 
 context("simple example")
 
@@ -28,7 +51,7 @@ trueDAG <- edges2adj(i=c(3, 2, 2, 1),
 ## 0 0 0 0
 for (nodeModelName in c("gam", "poly", "lmboost")){
     test_that(paste0("basic:",nodeModelName), { set.seed(1)
-        expect_true(checkCausalOrder(CAM(X, nodeModelName = nodeModelName)$Adj, trueDAG))
+        expect_causalOrders_compatible_to(CAM(X, nodeModelName = nodeModelName)$Adj, trueDAG)
     })
 }
 test_that("linear runs without errors:", { set.seed(1)
@@ -95,23 +118,9 @@ test_that("predicting works", {
     expect_equal(cam_fits, predicted_fits)
 })
 
-test_that("dag to causal order to dag works", {
-    causalOrder <- dagToCausalOrder(trueDAG)
-    adjacency <- causalOrderToAdjacency(causalOrder)
-    expect_true(all(adjacency[as.matrix(trueDAG)]))
-})
-
-
-test_that("path Matrix", {
-    pathMatrixShould <- structure(c(TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, 
-                                    TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE), .Dim = c(4L, 4L))
-    expect_equal(getPathMatrix(as.matrix(trueDAG)), pathMatrixShould)
-    expect_equal(matrix(F, nrow=4, ncol=4), matrix(F, nrow=4, ncol=4))
-    expect_equal(matrix(F, nrow=0, ncol=0), matrix(F, nrow=0, ncol=0))
-})
 
 # simpler DAG for boostrap tests -------------------------------------------------------------------
-
+context("bootstrap")
 p=3
 trueDAG <- matrix(FALSE,ncol=p, nrow=p)
 trueDAG[matrix(c(1,2,
@@ -120,6 +129,7 @@ obj <- random_additive_polynomial_SEM(trueDAG, degree=2, seed_=1)
 X <- CAM::simulate_additive_SEM(obj, n=100,seed_ = 1)
 
 test_that("bootstrap test two sided V(3)", {
+    if (quick) skip("quick")
     boot_res <- bootstrap.cam(X, matrix(c(2,1), ncol=2),B=100, method = "two-sided") 
     expect_more_than(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam(X, matrix(c(3,1), ncol=2),B=100, method = "two-sided")
@@ -127,6 +137,7 @@ test_that("bootstrap test two sided V(3)", {
 })
 
 test_that("bootstrap test one-sided V(3)", {
+    if (quick) skip("quick")
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(3,1),ncol=2))
     expect_more_than(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,2),ncol=2))
@@ -136,6 +147,7 @@ test_that("bootstrap test one-sided V(3)", {
 })
 
 test_that("bootstrap test one-sided V(3) lvl0", {
+    if (quick) skip("quick")
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(3,1),ncol=2), bs_lvl0 = TRUE)
     expect_more_than(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,3),ncol=2), bs_lvl0 = TRUE)

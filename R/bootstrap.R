@@ -4,7 +4,7 @@ fastForward.cam <- function(object, noise)
 {   
     output <- copy(noise) # copy unneccesarly as noise is not used elsewhere, but lets be friendly and have no sideeffects
     causalOrder <- dagToCausalOrder(object$causalDAG)
-    for (k in causalOrder){
+    for (k in order(causalOrder)){
         set(output,i=NULL , j=k, value=predict(object$nodeModels[[k]], output) + noise[[k]])
     }
     return(output)
