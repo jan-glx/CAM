@@ -12,7 +12,7 @@ random_additive_polynomial_SEM <- function(trueDAG, degree=3, seed_=NULL){
   f_jk <- matrix(list(),p,p)
   f_jk[trueDAG>0] <- lapply(rep(degree,sum(trueDAG)), FUN=rand_poly)
   if (!is.null(seed_)) .GlobalEnv$.Random.seed <- seed.bak
-  list(trueDAG=trueDAG, f_jk=f_jk, p=p)
+  return(list(trueDAG=trueDAG, f_jk=f_jk, p=p))
 }
 
 #' @export
