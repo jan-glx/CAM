@@ -347,6 +347,8 @@ cam.fit <- function(X, causalDAG=NULL, nodeModelName = c("gam", "lasso", "poly",
     return(cam)
 }
 
+
+
 #' @export 
 #' @import data.table 
 #' @importFrom stats predict

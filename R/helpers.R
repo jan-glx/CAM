@@ -85,3 +85,18 @@ getPathMatrix <- function(adj)
   }
   return(path_matrix)
 }
+
+#' Compute all causal orderings of a number of nodes
+#' @param p Number of nodes that are to be permutated.
+#' @return List of order vectors (\eqn{pi})
+#' @importFrom gtools permutations
+#' @export
+allOrderPermutations <- function(p) {
+    parray <- permutations(p, p)
+    return(split(parray,seq_len(dim(parray)[1])))
+}
+    
+    
+    
+    
+    
