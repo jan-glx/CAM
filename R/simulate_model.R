@@ -1,10 +1,10 @@
 #' @export
-random_additive_polynomial_SEM <- function(trueDAG, degree=3, noise_mean = 1, 
-                                           noise_variance = 0.5, seed_=NULL) {
+random_additive_polynomial_SEM <- function(trueDAG, degree=3, noise_mean = 1, noise_variance = 0.5,
+                                           intercept_variance = 1, seed_=NULL) {
   if (!is.null(seed_)) {seed.bak <- .GlobalEnv$.Random.seed; set.seed(seed_)}
   p <- ncol(trueDAG)
   rand_poly <- function(.){
-    coef <- rnorm(degree+1, 0, 1)
+    coef <- runif(degree+1, -1, 1)
     f<- function(x){ t(sapply(x, `^`, (0:degree))) %*% coef}
     attr(f, "coef") <- coef
     return(f)
@@ -12,8 +12,8 @@ random_additive_polynomial_SEM <- function(trueDAG, degree=3, noise_mean = 1,
 
   f_jk <- matrix(list(),p,p)
   f_jk[trueDAG] <- lapply(seq_len(sum(trueDAG)), FUN=rand_poly)
-  mu <- rnorm(p)
-  e_var <- exp(rnorm(p)*noise_variance)*noise_mean
+  mu <- rnorm(p)*intercept_variance
+  e_var <- rnorm(p,noise_mean,noise_variance)
   if (!is.null(seed_)) .GlobalEnv$.Random.seed <- seed.bak
   return(list(trueDAG = trueDAG, f_jk=  f_jk, mu = mu, p = p, e_var = e_var, scale = rep(1, p)))
 }
@@ -46,12 +46,12 @@ simulate_additive_SEM <- function(sem_object, n = 500, seed_ = NULL, .rescale = 
                                f_jk[trueDAG[,k],k],
                                lapply(hsplit(X[,trueDAG[,k]]),list))
         if (.rescale & !(is.list(tmp))) {
-            tmp2 <-  sem_object$mu[k] + X[,k] * sem_object$e_var[k] + 
+            tmp2 <-  sem_object$mu[k] + 0 + 
                                              if (!(is.list(tmp))) rowSums(tmp) else 0
-            sem_object$scale <- .rsf/sqrt(mean(tmp2^2))
+            sem_object$scale[k] <- .rsf/sqrt(mean(tmp2^2))
         }
-        X[,k] <- sem_object$scale * (sem_object$mu[k] + X[,k] * sem_object$e_var[k] + 
-            if (!(is.list(tmp))) rowSums(tmp) else 0)
+        X[,k] <- sem_object$scale[k] * (sem_object$mu[k] + 
+            if (!(is.list(tmp))) rowSums(tmp) else 0)  + X[,k] * sem_object$e_var[k]
     }
     if (!is.null(seed_))
         .GlobalEnv$.Random.seed <- seed.bak
