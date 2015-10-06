@@ -1,42 +1,59 @@
 #' @export
-random_additive_polynomial_SEM <- function(trueDAG, degree=3, seed_=NULL){
+random_additive_polynomial_SEM <- function(trueDAG, degree=3, noise_mean = 1, 
+                                           noise_variance = 0.5, seed_=NULL) {
   if (!is.null(seed_)) {seed.bak <- .GlobalEnv$.Random.seed; set.seed(seed_)}
   p <- ncol(trueDAG)
-  rand_poly <- function(degree){
+  rand_poly <- function(.){
     coef <- rnorm(degree+1, 0, 1)
     f<- function(x){ t(sapply(x, `^`, (0:degree))) %*% coef}
     attr(f, "coef") <- coef
-    f
+    return(f)
   }
 
   f_jk <- matrix(list(),p,p)
-  f_jk[trueDAG>0] <- lapply(rep(degree,sum(trueDAG)), FUN=rand_poly)
+  f_jk[trueDAG] <- lapply(seq_len(sum(trueDAG)), FUN=rand_poly)
+  mu <- rnorm(p)
+  e_var <- exp(rnorm(p)*noise_variance)*noise_mean
   if (!is.null(seed_)) .GlobalEnv$.Random.seed <- seed.bak
-  return(list(trueDAG=trueDAG, f_jk=f_jk, p=p))
+  return(list(trueDAG = trueDAG, f_jk=  f_jk, mu = mu, p = p, e_var = e_var, scale = rep(1, p)))
 }
 
 #' @export
-simulate_additive_SEM <- function(sem_object, n=500, scaling=FALSE, seed_=NULL){
-    if (!is.null(seed_)) {seed.bak <- .GlobalEnv$.Random.seed; set.seed(seed_)}
+rescale_sem_object <- function(sem_object, rsf = 3, n=500, seed_= NULL) {
+    return(simulate_additive_SEM(sem_object, n, seed_, .rescale = TRUE, .rsf = rsf))
+}
 
-  p <- sem_object$p
-  trueDAG <- sem_object$trueDAG
-  f_jk <- sem_object$f_jk
 
-  hsplit <- function(x){
-    x = as.matrix(x)
-    split(x, col(x))
-  }
 
-  X <- matrix(rnorm(n*p), ncol=p) # noise
-  for(k in order(dagToCausalOrder(sem_object$trueDAG))) {
-    tmp <- mapply(do.call,
-               f_jk[trueDAG[,k],k],
-               lapply(hsplit(X[,trueDAG[,k]]),list))
-    if (!(is.list(tmp))) {
-      X[,k] <- X[,k] + rowSums(if(scaling) scale(tmp) else tmp)
+#' @export
+simulate_additive_SEM <- function(sem_object, n = 500, seed_ = NULL, .rescale = FALSE, .rsf = 1) {
+    if (!is.null(seed_)) {
+        seed.bak <- .GlobalEnv$.Random.seed; set.seed(seed_)
     }
-  }
-  if (!is.null(seed_)) .GlobalEnv$.Random.seed <- seed.bak
-  X
+    
+    p <- sem_object$p
+    trueDAG <- sem_object$trueDAG
+    f_jk <- sem_object$f_jk
+    
+    hsplit <- function(x) {
+        x = as.matrix(x)
+        split(x, col(x))
+    }
+    
+    X <- matrix(rnorm(n * p), ncol = p) # noise
+    for (k in order(dagToCausalOrder(sem_object$trueDAG))) {
+        tmp  <- mapply(do.call,
+                               f_jk[trueDAG[,k],k],
+                               lapply(hsplit(X[,trueDAG[,k]]),list))
+        if (.rescale & !(is.list(tmp))) {
+            tmp2 <-  sem_object$mu[k] + X[,k] * sem_object$e_var[k] + 
+                                             if (!(is.list(tmp))) rowSums(tmp) else 0
+            sem_object$scale <- .rsf/sqrt(mean(tmp2^2))
+        }
+        X[,k] <- sem_object$scale * (sem_object$mu[k] + X[,k] * sem_object$e_var[k] + 
+            if (!(is.list(tmp))) rowSums(tmp) else 0)
+    }
+    if (!is.null(seed_))
+        .GlobalEnv$.Random.seed <- seed.bak
+    return( if (.rescale) sem_object else X)
 }
