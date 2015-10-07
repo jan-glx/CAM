@@ -20,16 +20,14 @@ random_additive_polynomial_SEM <- function(trueDAG, degree=3, noise_mean = 1, no
 
 #' @export
 rescale_sem_object <- function(sem_object, rsf = 3, n=500, seed_= NULL) {
-    return(simulate_additive_SEM(sem_object, n, seed_, .rescale = TRUE, .rsf = rsf))
+    return(simulate_additive_SEM(sem_object, n, seed_= seed_, .rescale = TRUE, .rsf = rsf))
 }
 
 
 
 #' @export
 simulate_additive_SEM <- function(sem_object, n = 500, seed_ = NULL, .rescale = FALSE, .rsf = 1) {
-    if (!is.null(seed_)) {
-        seed.bak <- .GlobalEnv$.Random.seed; set.seed(seed_)
-    }
+    if (!is.null(seed_)) {seed.bak <- .GlobalEnv$.Random.seed; set.seed(seed_)}
     
     p <- sem_object$p
     trueDAG <- sem_object$trueDAG
