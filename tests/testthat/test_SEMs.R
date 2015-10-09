@@ -14,8 +14,22 @@ test_that("random polynomial additive SEMs make sense", {
         
         sem_object <- rescale_sem_object(sem_object, 3)
         X <- simulate_additive_SEM(sem_object)
-        png(sprintf("test_ouput/polynomialAdditiveSEM_%40i.png", i))
+        #png(sprintf("test_ouput/polynomialAdditiveSEM_%40i.png", i))
         pairs(X)
-        dev.off()
+        #dev.off()
+        
+        nulls <- fitAllOrders(X)
+        best_fit <- nulls$bestFits[score== max(nulls$bestFits[,score]),cam]
+        best_fit <- best_fit[[sample(length(best_fit),1)]]
+        best_fits_resid <- residuals(best_fit)
+        
+        resid_boot <- CAM:::colwise_resample(best_fits_resid)
+        Xboot <- CAM:::fastForward.cam(best_fit, resid_boot)
+        pairs(Xboot)
+        snd <- fitAllOrders(Xboot)
+        best_fit2 <- snd$bestFits[score== max(snd$bestFits[,score]),cam]
+        best_fit2 <- best_fit2[[sample(length(best_fit2),1)]]
+        logLik(best_fit)
+        logLik(best_fit2)
     }
 })
