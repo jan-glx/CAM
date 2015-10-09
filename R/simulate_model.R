@@ -1,6 +1,6 @@
 #' @export
 random_additive_polynomial_SEM <- function(trueDAG, degree=3, noise_mean = 1, noise_variance = 0.5,
-                                           intercept_variance = 1, seed_=NULL) {
+                                           intercept_variance = 1, rescale = TRUE, seed_=NULL) {
   if (!is.null(seed_)) {seed.bak <- .GlobalEnv$.Random.seed; set.seed(seed_)}
   p <- ncol(trueDAG)
   rand_poly <- function(.){
@@ -14,8 +14,10 @@ random_additive_polynomial_SEM <- function(trueDAG, degree=3, noise_mean = 1, no
   f_jk[trueDAG] <- lapply(seq_len(sum(trueDAG)), FUN=rand_poly)
   mu <- rnorm(p)*intercept_variance
   e_var <- rnorm(p,noise_mean,noise_variance)
+  result <- list(trueDAG = trueDAG, f_jk=  f_jk, mu = mu, p = p, e_var = e_var, scale = rep(1, p))
+  if(rescale) result <- rescale_sem_object(result)
   if (!is.null(seed_)) .GlobalEnv$.Random.seed <- seed.bak
-  return(list(trueDAG = trueDAG, f_jk=  f_jk, mu = mu, p = p, e_var = e_var, scale = rep(1, p)))
+  return(result)
 }
 
 #' @export

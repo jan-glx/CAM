@@ -1,10 +1,13 @@
 #' @export
-fitAllOrders <- function(X, verbose = FALSE) {
+fitAllOrders <- function(X, nodeModelName = NULL, nodeModelPars = NULL, verbose = FALSE) {
     p <- ncol(X)
     orders <- allOrderPermutations(p)
     results <- data.table(causalOrder = orders,
                           cam = lapply(orders, function(causalOrder) {
-                              cam.fit(X, causalDAG=causalOrderToAdjacency(causalOrder))
+                              cam.fit(X, causalDAG=causalOrderToAdjacency(causalOrder), 
+                                      nodeModelName = nodeModelName, 
+                                      nodeModelPars = nodeModelPars,
+                                      verbose = verbose)
                           }))
     results[, score := sapply(cam, logLik)]
     setorderv(results, "score", order=-1L)

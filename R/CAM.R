@@ -252,7 +252,7 @@ selectFeatures.mboost <- function(object, atLeastThatMuchSelected, atMostThatMan
 #' @export 
 #' @import data.table
 fitNode <- function(X, j, parents_of_j, method = c("gam", "lasso", "poly", "linear", "lmboost", "mboost"), 
-                    pars = list()) {
+                    pars = list(), verbose = FALSE) {
     if (is.function(method)) {
         return(do.call(method, c(list(X=X, j=j, parents_of_j=parents_of_j), pars)))
     }
@@ -279,17 +279,15 @@ fitNode <- function(X, j, parents_of_j, method = c("gam", "lasso", "poly", "line
                   gam = {
                       nobs <- nrow(X)
                       max_numBasisFcts <-ceiling(nobs/(3*length(parents_of_j)))
-                      if (max_numBasisFcts < pars$numBasisFcts)
-                      {
-                          cat("changed number of basis functions from", pars$numBasisFcts,"to    ", 
+                      if (max_numBasisFcts < pars$numBasisFcts) {
+                          warning("changed number of basis functions from", pars$numBasisFcts,"to    ", 
                               max_numBasisFcts, "    in order to have enough samples per basis function\n")
                           pars$numBasisFcts <- max_numBasisFcts
                       }
                       f <- make_additive_formula(paste0("s(%s, k=", pars$numBasisFcts, ")"))
                       res <- try(mgcv::gam(formula=f, data=X),silent = TRUE)
-                      if(typeof(res) == "logical" || inherits(res, "try-error"))
-                      {
-                          cat("There was some error with gam. The smoothing parameter is set to zero.\n")
+                      if(typeof(res) == "logical" || inherits(res, "try-error")) {
+                          warning("There was some error with gam. The smoothing parameter is set to zero.\n")
                           f <-make_additive_formula(paste0("s(%s, k=", pars$numBasisFcts, ", sp=0)"))
                           res <- mgcv::gam(formula=f, data=X)
                       }
@@ -327,7 +325,7 @@ fitNode <- function(X, j, parents_of_j, method = c("gam", "lasso", "poly", "line
 #' @export  
 #' @import data.table
 cam.fit <- function(X, causalDAG=NULL, nodeModelName = c("gam", "lasso", "poly", "linear", "lmboost"), 
-                    nodeModelPars = NULL)
+                    nodeModelPars = NULL, verbose = FALSE)
 {
     if (is.null(causalDAG)) stop("Not implemented here. Use CAM(...) instead.")
     if (!is.function(nodeModelName)) nodeModelName <- match.arg(nodeModelName) 
@@ -336,7 +334,8 @@ cam.fit <- function(X, causalDAG=NULL, nodeModelName = c("gam", "lasso", "poly",
     if (!any(class(causalDAG) %in% c("matrix", "ngCMatrix"))) stop("causalDAG must be of class 'matrix' or 'ngCMatrix'")
     p <- nrow(causalDAG)
     nodeModels <- lapply(setNames(as.list(1:p), colnames(X)), function(j) 
-        fitNode(X=X, j=j, parents_of_j = which(causalDAG[,j]), method = nodeModelName, pars = nodeModelPars))
+        fitNode(X=X, j=j, parents_of_j = which(causalDAG[,j]), method = nodeModelName, 
+                pars = nodeModelPars, verbose=verbose))
     vals <- setDT(lapply(nodeModels,fitted.values))
     cam <- list(call= match.call(), causalDAG = causalDAG, p = p, nodeModels = nodeModels, data = X, 
                 fitted.values = vals, 
