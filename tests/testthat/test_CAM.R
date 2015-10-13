@@ -138,7 +138,7 @@ test_that("bootstrap test two sided V(3)", {
 
 test_that("bootstrap test one-sided V(3)", {
     if (quick) skip("quick")
-    skip()
+    skip("not implemented anymore")
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(3,1),ncol=2))
     expect_more_than(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,2),ncol=2))
@@ -149,7 +149,7 @@ test_that("bootstrap test one-sided V(3)", {
 
 test_that("bootstrap test one-sided V(3) lvl0", {
     if (quick) skip("quick")
-    skip()
+    skip("not implemented anymore")
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(3,1),ncol=2), bs_lvl0 = TRUE)
     expect_more_than(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,3),ncol=2), bs_lvl0 = TRUE)

@@ -10,8 +10,8 @@ fitAllOrders <- function(X, nodeModelName = NULL, nodeModelPars = NULL, verbose 
                                       verbose = verbose)
                           }))
     results[, score := sapply(cam, logLik)]
-    setorderv(results, "score", order=-1L)
     results[, id:=.I]
+    setorderv(results, "score", order=-1L)
     
     constraints <- combn(p, 2)
     constraints <- cbind(constraints,constraints[c(2,1),])
@@ -28,5 +28,20 @@ fitAllOrders <- function(X, nodeModelName = NULL, nodeModelPars = NULL, verbose 
             "are optimal under at least one of the", ncol(constraints), "constraints")
         cat("."); flush.console()
     }	
-    return(list(bestFits = results[id %in% orderIDs2check], mll=mll))
+    return(list(fits = results, bestFits = results[id %in% orderIDs2check], mll=mll))
 }
+
+mlloc <- function(results, p) {
+    constraints <- combn(p, 2)
+    constraints <- cbind(constraints,constraints[c(2,1),])
+    causalOrders = simplify2array(results[, causalOrder])
+    mll <- data.table(ii = constraints[1,],
+                      jj = constraints[2,],
+                      id = apply(constraints, 2, function(constrain) {
+                          results[causalOrders[constrain[2],]<causalOrders[constrain[1],], 
+                               id[1]]# first one is the one with max logLik
+                      }))
+    mll[results, ':='(score=score), on="id"]
+    return(mll)
+}
+

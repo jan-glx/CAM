@@ -368,9 +368,9 @@ residuals.cam <- function(object, ...) object$data - object$fitted.values
 logLik.cam <- function(object, ...) {
     res <- residuals(object)
     N <- nrow(res)
-    #val <-  sum(-1/2*N*(log(sapply(res^2,mean))+log(2*pi)+1))
+    val <-  sum(-1/2*N*(log(sapply(res^2,mean))+log(2*pi)+1))
     logLiks <- lapply(object$nodeModels, logLik)
-    val <- do.call(sum, logLiks)
+    #val <- do.call(sum, logLiks)
     attr(val, "df") <- sum(sapply(logLiks,function(obj)attr(obj, "df"))) #there are more, but let's ignore them
     class(val) <- "logLik"
     return(val)
