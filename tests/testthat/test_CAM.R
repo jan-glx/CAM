@@ -63,6 +63,10 @@ for (nodeModelName in c("gam", "poly", "lmboost")){
         expect_equal(trueDAG, CAM(X, nodeModelName = nodeModelName, variableSel = TRUE, pruning = TRUE)$Adj)
     })
 }
+test_that("lasso PNS runs without errors:", { set.seed(1)
+    CAM(X, pnsMethod = "lasso", variableSel = TRUE)
+})
+
 test_that("linear runs without errors with pruning and PNS:", { set.seed(1)
     CAM(X, nodeModelName = "linear", variableSel = TRUE, pruning = TRUE)
 })

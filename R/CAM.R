@@ -112,6 +112,7 @@ CAM <-
     if(verbose) cat("number of cores:", numCores, "\n")
     if (is.list(X)||is.data.frame(X)||is.data.table(X)) setDT(X)
     else X <- as.data.table(X)
+    setnames(X, make.names(colnames(X)))
     p <- dim(X)[2]
     
     ## STEP 1: variable selection
@@ -225,7 +226,7 @@ selectFeatures.lm <- function(object, cutOffPVal, verbose = FALSE) {
 }
 
 selectFeatures.glmnet <- function(object, verbose = FALSE) {
-    return(object$beta != 0)
+    return(as.matrix(object$beta != 0))
 }
 
 selectFeatures.mboost <- function(object, atLeastThatMuchSelected, atMostThatManyNeighbors, verbose = FALSE) {
