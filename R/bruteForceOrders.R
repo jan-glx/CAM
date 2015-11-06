@@ -9,7 +9,9 @@ fitAllOrders <- function(X, nodeModelName = NULL, nodeModelPars = NULL, verbose 
                                       nodeModelPars = nodeModelPars,
                                       verbose = verbose)
                           }))
-    results[, score := sapply(cam, logLik)]
+    results[, ':='(score = sapply(cam, logLik),
+                   lli = lapply(cam, logLik_single.cam)
+                   )]
     results[, id:=.I]
     setorderv(results, "score", order=-1L)
     
@@ -21,7 +23,7 @@ fitAllOrders <- function(X, nodeModelName = NULL, nodeModelPars = NULL, verbose 
                       id = apply(constraints, 2, function(constrain) {
                           results[ causalOrders[constrain[2],]<causalOrders[constrain[1],], id[1]]# first one is the one with max logLik
                       }))
-    mll <-results[mll,.(causalOrder=causalOrder, score=score, id=id,  ii=ii, jj=jj), on="id"]
+    mll <-results[mll,.(causalOrder=causalOrder, score=score, lli=lli, id=id,  ii=ii, jj=jj), on="id"]
     orderIDs2check <- unique(mll[,id])
     if (verbose) {
         cat("of the", ncol(causalOrders), "posible causal orders", length(orderIDs2check), 
@@ -41,7 +43,7 @@ mlloc <- function(results, p) {
                           results[causalOrders[constrain[2],]<causalOrders[constrain[1],], 
                                id[1]]# first one is the one with max logLik
                       }))
-    mll[results, ':='(score=score), on="id"]
+    mll[results, ':='(score=score, lli=lli), on="id"]
     return(mll)
 }
 

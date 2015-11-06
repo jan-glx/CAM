@@ -338,8 +338,11 @@ cam.fit <- function(X, causalDAG=NULL, nodeModelName = c("gam", "lasso", "poly",
         fitNode(X=X, j=j, parents_of_j = which(causalDAG[,j]), method = nodeModelName, 
                 pars = nodeModelPars, verbose=verbose))
     vals <- setDT(lapply(nodeModels,fitted.values))
+    res <- X - vals
     cam <- list(call= match.call(), causalDAG = causalDAG, p = p, nodeModels = nodeModels, data = X, 
                 fitted.values = vals, 
+                mu = sapply(res,mean),
+                sigma = sapply(res, function(res) sqrt(mean((res-mean(res))^2))),
                 df.residual = sapply(nodeModels, "[[", "df.residual"),
                 est.df = sapply(nodeModels,  function(x) sum(x$est.residual))
                 )
@@ -369,12 +372,24 @@ residuals.cam <- function(object, ...) object$data - object$fitted.values
 logLik.cam <- function(object, ...) {
     res <- residuals(object)
     N <- nrow(res)
-    val <-  sum(-1/2*N*(log(sapply(res*res,mean))+log(2*pi)+1))
+    val <-  sum(logLik_single.cam(object))
     #logLiks <- lapply(object$nodeModels, logLik)
     #val <- do.call(sum, logLiks)
     attr(val, "df") <- NA#sum(sapply(logLiks,function(obj)attr(obj, "df"))) #there are more, but let's ignore them
     class(val) <- "logLik"
     return(val)
+}
+
+#' @export 
+#' @importFrom stats logLik
+logLik_single.cam <- function(object, ...) {
+    res <- residuals(object)
+    N <- nrow(res)
+    vals <- rowSums(-1/2*(mapply(
+        function(r,m,s){
+            log(2*pi)+log(s^2) + ((r-m)/s)^2
+        }, res, object$mu,object$sigma)))
+    return(vals)
 }
 
 #' @export 
