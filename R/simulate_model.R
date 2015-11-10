@@ -3,7 +3,7 @@ random_additive_polynomial_SEM <- function(trueDAG, degree=3, noise_mean = 1, no
                                            intercept_variance = 1, rescale = TRUE, seed_=NULL) {
   if (!is.null(seed_)) {seed.bak <- .GlobalEnv$.Random.seed; set.seed(seed_)}
   p <- ncol(trueDAG)
-  rand_poly <- function(.){
+  rand_poly <- function(.,degree){
     coef <- runif(degree+1, -1, 1)
     f<- function(x){ t(sapply(x, `^`, (0:degree))) %*% coef}
     attr(f, "coef") <- coef
@@ -11,7 +11,7 @@ random_additive_polynomial_SEM <- function(trueDAG, degree=3, noise_mean = 1, no
   }
 
   f_jk <- matrix(list(),p,p)
-  f_jk[trueDAG] <- lapply(seq_len(sum(trueDAG)), FUN=rand_poly)
+  f_jk[trueDAG] <- mapply(rand_poly, seq_len(sum(trueDAG)), degree)
   mu <- rnorm(p)*intercept_variance
   e_var <- rnorm(p,noise_mean,noise_variance)
   result <- list(trueDAG = trueDAG, f_jk=  f_jk, mu = mu, p = p, e_var = e_var, scale = rep(1, p))
