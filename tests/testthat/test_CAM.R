@@ -129,8 +129,10 @@ p=3
 trueDAG <- matrix(FALSE,ncol=p, nrow=p)
 trueDAG[matrix(c(1,2,
                  3,3),ncol=2)] <- TRUE
-obj <- random_additive_polynomial_SEM(trueDAG, seed_=2)
-X <- CAM::simulate_additive_SEM(obj, n=400,seed_ = 3)
+sem_object <- random_additive_polynomial_SEM(trueDAG, seed_=5)
+sem_object <- rescale_sem_object(sem_object, seed_ = 4)
+X <- CAM::simulate_additive_SEM(sem_object, n=400,seed_ = 3)
+pairs(X)
 
 test_that("bootstrap test two sided V(3)", {
     if (quick) skip("quick")
@@ -158,4 +160,21 @@ test_that("bootstrap test one-sided V(3) lvl0", {
     expect_more_than(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,3),ncol=2), bs_lvl0 = TRUE)
     expect_less_than(boot_res$pvalue, 0.05)
+})
+
+test_that("bootstrap test one-sided V(3) lvl0", {
+    if (quick) skip("quick")
+    skip("not implemented anymore")
+    boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(3,1),ncol=2), bs_lvl0 = TRUE)
+    expect_more_than(boot_res$pvalue, 0.05)
+    boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,3),ncol=2), bs_lvl0 = TRUE)
+    expect_less_than(boot_res$pvalue, 0.05)
+})
+
+test_that("direct bootstrap test one-sided V(3) works", {
+    if (quick) skip("quick")
+    dt <- bootstrap.cam.one_sided_direct(X)[[1]]
+    dt[, true:=TRUE]
+    dt[(ii==1 & jj==3)|(ii==2 & jj==3), true:=FALSE]
+    expect_true(all(dt[, xor(p.value<=0.05,true)]))
 })

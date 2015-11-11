@@ -165,3 +165,30 @@ bootstrap.cam.one_sided <- function(X, ij, B=100, nodeModelName=NULL, nodeModelP
     )
     return(res)
 }
+
+#' H0: i -/->j
+#' @export
+bootstrap.cam.one_sided_direct <- function(X, B=99, nodeModelName=NULL, nodeModelPars=NULL, 
+                                           verbose=0, lambda=1, seed_=NULL){
+    if (!is.null(seed_)) {seed.bak <- .GlobalEnv$.Random.seed; set.seed(seed_)}
+    X <- as.data.table(X)
+    n <- nrow(X)
+    res <- rbindlist(lapply(seq_len(B+1)-1, function(b){
+        X_boot <- if (b>0) X[sample(n, n, replace = TRUE)] else X
+        res <- fitAllOrders(X_boot)$mll
+        return(res[, b:=b])
+    }))
+    res[res, 
+        ':='(rscore=i.score, rlli=i.lli), 
+        on=c("b"="b","ii"="jj","jj"="ii")]
+    res[, ':='(llr=score-rscore, sd_llr=mapply(function(lli,rlli) sd(lli-rlli),lli,rlli))]
+    res[, ':='(lli=NULL, rlli=NULL)]
+    setkey(res, ii, jj)
+    stat <- res[b==0][,b:=NULL][res[b!=0]]
+    pvals <- stat[, 
+                  .(p.value = (1+sum((llr-0)/sd_llr >= (i.llr-llr)/i.sd_llr))/(.N+1)),
+                  by = .(ii, jj)]
+    if (!is.null(seed_)) res[,seed:=seed_]
+    if (!is.null(seed_)) .GlobalEnv$.Random.seed <- seed.bak
+    return(list(pvals,stat))
+}
