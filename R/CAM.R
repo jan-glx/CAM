@@ -250,6 +250,7 @@ selectFeatures.mboost <- function(object, atLeastThatMuchSelected, atMostThatMan
     return(tmp)
 }
 
+#' @seealso mgcv::gam glmnet::glmnet
 #' @export 
 #' @import data.table
 fitNode <- function(X, j, parents_of_j, method = c("gam", "lasso", "poly", "linear", "lmboost", "mboost"), 
@@ -259,7 +260,7 @@ fitNode <- function(X, j, parents_of_j, method = c("gam", "lasso", "poly", "line
     }
     method <- match.arg(method)
     default_pars <- switch(method,
-                           gam = list(numBasisFcts = 10),
+                           gam = list(numBasisFcts = 10, spline_params=list(bs="ad")),
                            poly = list(degree=3),
                            list())
     if (is.null(pars))
@@ -285,11 +286,18 @@ fitNode <- function(X, j, parents_of_j, method = c("gam", "lasso", "poly", "line
                               max_numBasisFcts, "    in order to have enough samples per basis function\n")
                           pars$numBasisFcts <- max_numBasisFcts
                       }
-                      f <- make_additive_formula(paste0("s(%s, k=", pars$numBasisFcts, ")"))
+                      spline_params <- pars$spline_params
+                      char_sp <- sapply(spline_params,is.character)
+                      spline_params <- paste0(
+                          sprintf(', k=%f', pars$numBasisFcts),
+                          sprintf(', %s="%s"', names(spline_params)[char_sp], spline_params[char_sp], collapse = TRUE),
+                          sprintf(', %s=%f', names(spline_params)[!char_sp], spline_params[!char_sp], collapse = TRUE)
+                      )
+                      f <- make_additive_formula(paste0("s(%s",spline_params , ')'))
                       res <- try(mgcv::gam(formula=f, data=X),silent = TRUE)
                       if(typeof(res) == "logical" || inherits(res, "try-error")) {
                           warning("There was some error with gam. The smoothing parameter is set to zero.\n")
-                          f <-make_additive_formula(paste0("s(%s, k=", pars$numBasisFcts, ", sp=0)"))
+                          f <-make_additive_formula(paste0("s(%s", spline_params, ", sp=0)"))
                           res <- mgcv::gam(formula=f, data=X)
                       }
                       res
@@ -323,6 +331,16 @@ fitNode <- function(X, j, parents_of_j, method = c("gam", "lasso", "poly", "line
 }
 
 
+#' Fit a Causal Additive Model (CAM) based on a given DAG
+#' Fit a Causal Additive Model (CAM) based on a given DAG \code{causalDAG} using a specified model 
+#' class (\code{nodeModelName}, \code{nodeModelPars}) for the nodes.
+#' @seealso fitNode
+#' @param X Data to which the CAM gets fitted. Schould be a data.table but may be a list of numerics
+#' or data.frame.
+#' @param causalDAG Adjaziency matrix specifying the causal DAG of the CAM to be fitted. 
+#' @param nodeModelName String specifying the model class/ fitting method.
+#' @param nodeModelPars Additional paramters for the fitting method.
+#' @param verbose Logical indicating if diagnostic information should be printed.
 #' @export  
 #' @import data.table
 cam.fit <- function(X, causalDAG=NULL, nodeModelName = c("gam", "lasso", "poly", "linear", "lmboost"), 
