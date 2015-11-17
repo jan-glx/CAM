@@ -260,7 +260,7 @@ fitNode <- function(X, j, parents_of_j, method = c("gam", "lasso", "poly", "line
     }
     method <- match.arg(method)
     default_pars <- switch(method,
-                           gam = list(numBasisFcts = 10, spline_params=list(bs="ad")),
+                           gam = list(numBasisFcts = -1),
                            poly = list(degree=3),
                            list())
     if (is.null(pars))
