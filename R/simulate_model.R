@@ -9,9 +9,10 @@ random_additive_polynomial_SEM <- function(trueDAG, degree=3, noise_mean = 1, no
     attr(f, "coef") <- coef
     return(f)
   }
-
+    
+  if(length(degree==1)) degree <- matrix(rep(degree, p*p), ncol=p)
   f_jk <- matrix(list(),p,p)
-  f_jk[trueDAG] <- mapply(rand_poly, seq_len(sum(trueDAG)), degree)
+  f_jk[trueDAG] <- mapply(rand_poly, seq_len(sum(trueDAG)), degree[trueDAG])
   mu <- rnorm(p)*intercept_variance
   e_var <- rnorm(p,noise_mean,noise_variance)
   result <- list(trueDAG = trueDAG, f_jk=  f_jk, mu = mu, p = p, e_var = e_var, scale = rep(1, p))
