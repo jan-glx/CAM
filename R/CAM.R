@@ -288,13 +288,14 @@ fitNode <- function(X, j, parents_of_j, method = c("gam", "lasso", "poly", "line
                       }
                       spline_params <- pars$spline_params
                       char_sp <- sapply(spline_params,is.character)
+                      if(is.list(char_sp)) char_sp <- logical()
                       spline_params <- paste0(
                           sprintf(', k=%f', pars$numBasisFcts),
                           sprintf(', %s="%s"', names(spline_params)[char_sp], spline_params[char_sp], collapse = TRUE),
                           sprintf(', %s=%f', names(spline_params)[!char_sp], spline_params[!char_sp], collapse = TRUE)
                       )
                       f <- make_additive_formula(paste0("s(%s",spline_params , ')'))
-                      res <- try(mgcv::gam(formula=f, data=X), silent = FALSE)#, method="ML"
+                      res <- try(do.call(mgcv::gam, c(list(formula=f, data=X), pars$gam_params)), silent = FALSE)#, method="ML"
                       if(typeof(res) == "logical" || inherits(res, "try-error")) {
                           warning("There was some error with gam. The smoothing parameter is set to zero.\n")
                           f <-make_additive_formula(paste0("s(%s", sprintf(', k=%f', pars$numBasisFcts), ", sp=0)"))
