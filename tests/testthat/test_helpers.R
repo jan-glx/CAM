@@ -47,3 +47,10 @@ test_that("path Matrix", {
     expect_equal(matrix(F, nrow=4, ncol=4), matrix(F, nrow=4, ncol=4))
     expect_equal(matrix(F, nrow=0, ncol=0), matrix(F, nrow=0, ncol=0))
 })
+test_that("simulate additive polynomial SEM without error", {
+    degree <- matrix(1,4,4)
+    degree[1,2] <- 3
+    trueDAG <- edges2adj(i=c(1,1,2,4,4),
+                         j=c(2,3,3,1,2))
+    sem_object <- random_additive_polynomial_SEM(trueDAG, degree = degree, seed_ = 1)
+})

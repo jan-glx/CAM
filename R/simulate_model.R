@@ -10,7 +10,7 @@ random_additive_polynomial_SEM <- function(trueDAG, degree=3, noise_mean = 1, no
     return(f)
   }
     
-  if(length(degree==1)) degree <- matrix(rep(degree, p*p), ncol=p)
+  if(length(degree)==1) degree <- matrix(rep(degree, p*p), ncol=p)
   f_jk <- matrix(list(),p,p)
   f_jk[trueDAG] <- mapply(rand_poly, seq_len(sum(trueDAG)), degree[trueDAG])
   mu <- rnorm(p)*intercept_variance
