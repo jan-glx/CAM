@@ -30,7 +30,7 @@ incEdge <- function(X, nodeModelName, nodeModelPars, scoreFunction, maxNumParent
     Adj <- matrix(FALSE, p, p)
     
     # initialize score matrix
-    intercept_only_model <- cam.fit(X, causalDAG=Adj, nodeModelName, nodeModelPars)
+    intercept_only_model <- cam.fit(X, causalDAG=Adj, nodeModelName, nodeModelPars, numCores=numCores)
     scoreNodes <- sapply(intercept_only_model$nodeModels, scoreFunction)
     for (j in 1:p) {
         scoreMat <- updateScoreMat(scoreMat=scoreMat, X=X, nodeModelName=nodeModelName, 
@@ -41,7 +41,6 @@ incEdge <- function(X, nodeModelName, nodeModelPars, scoreFunction, maxNumParent
     }
 
     fixedOrdersAdded <- 0L
-    
     # Greedily adding edges
     while(sum(scoreMat!=-Inf) > 0)
     {

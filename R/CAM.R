@@ -169,11 +169,15 @@ preliminaryNeighborSel <- function(X, method = NULL, modelPars = NULL, selection
     if (verbose && intervData) cat("The preliminary neighbourhood selection is done with the observational data only.\n")
     X2 <- if(intervData) X[rowSums(intervMat) == 0,] else X # we should drop rows for each j individually here
     
-    moreArgs <- list(X = X2, method = method, modelPars = modelPars, selectionPars = selectionPars, verbose = verbose)
-    if(numCores == 1) {
-        selMat <-             mapply(selectParents, MoreArgs = moreArgs, j=1:p)
+    if(method=="given") {
+        selMat <- modelPars
     } else {
-        selMat <- parallel::mcmapply(selectParents, MoreArgs = moreArgs, j=1:p, mc.cores = numCores)
+        moreArgs <- list(X = X2, method = method, modelPars = modelPars, selectionPars = selectionPars, verbose = verbose)
+        if(numCores == 1) {
+            selMat <-             mapply(selectParents, MoreArgs = moreArgs, j=1:p)
+        } else {
+            selMat <- parallel::mcmapply(selectParents, MoreArgs = moreArgs, j=1:p, mc.cores = numCores)
+        }
     }
     # The next line includes j as a possible parent of i if i is considered a possible parent of j
     # selMat <- selMat | t(selMat)
@@ -345,7 +349,7 @@ fitNode <- function(X, j, parents_of_j, method = c("gam", "lasso", "poly", "line
 #' @export  
 #' @import data.table
 cam.fit <- function(X, causalDAG=NULL, nodeModelName = c("gam", "lasso", "poly", "linear", "lmboost"), 
-                    nodeModelPars = NULL, verbose = FALSE)
+                    nodeModelPars = NULL, numCores = 1, verbose = FALSE)
 {
     if (is.null(causalDAG)) stop("Not implemented here. Use CAM(...) instead.")
     if (!is.function(nodeModelName)) nodeModelName <- match.arg(nodeModelName) 
@@ -353,9 +357,20 @@ cam.fit <- function(X, causalDAG=NULL, nodeModelName = c("gam", "lasso", "poly",
     else X <- as.data.table(X)
     if (!any(class(causalDAG) %in% c("matrix", "ngCMatrix"))) stop("causalDAG must be of class 'matrix' or 'ngCMatrix'")
     p <- nrow(causalDAG)
-    nodeModels <- lapply(setNames(as.list(1:p), colnames(X)), function(j) 
-        fitNode(X=X, j=j, parents_of_j = which(causalDAG[,j]), method = nodeModelName, 
-                pars = nodeModelPars, verbose=verbose))
+    
+    f <- function(j) {
+        nodeModel <- fitNode(X=X, j=j, parents_of_j = which(causalDAG[,j]), method = nodeModelName, 
+                             pars = nodeModelPars, verbose=verbose)
+        nodeModel$call <- NULL
+        nodeModel
+    }
+    
+    if(numCores == 1) {
+        nodeModels <-             lapply(setNames(as.list(1:p), colnames(X)), f)
+    } else {
+        nodeModels <- parallel::mclapply(setNames(as.list(1:p), colnames(X)), f, mc.cores=numCores)
+    } 
+    
     vals <- setDT(lapply(nodeModels,fitted.values))
     res <- X - vals
     cam <- list(call= match.call(), causalDAG = causalDAG, p = p, nodeModels = nodeModels, data = X, 
