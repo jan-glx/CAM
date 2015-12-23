@@ -7,7 +7,7 @@
 CAM(X, nodeModelName = c("gam", "lasso", "poly", "linear", "lmboost"),
   scoreFunction = logLik, nodeModelPars = NULL, maxNumParents = ncol(X) -
   1, fixedOrders = matrix(ncol = 2, nrow = 0),
-  orderFixationMethod = c("force_edge", "emulate_edge", "free"),
+  orderFixationMethod = c("emulate_edge", "force_edge", "free"),
   variableSel = FALSE, pnsMethod = NULL, pnsModelPars = NULL,
   pnsSelectionPars = NULL, pruning = FALSE, pruneMethod = NULL,
   pruneModelPars = NULL, pruneSelectionPars = NULL, intervData = FALSE,

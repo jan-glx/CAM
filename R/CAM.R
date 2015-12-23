@@ -91,7 +91,7 @@ CAM <-
     function(X, nodeModelName = c("gam", "lasso", "poly", "linear", "lmboost"), scoreFunction = logLik, 
              nodeModelPars = NULL, maxNumParents = ncol(X) - 1, #min(dim(X)[2] - 1, round(dim(X)[1]/20)),
              fixedOrders = matrix(ncol = 2, nrow = 0),
-             orderFixationMethod = c("force_edge", "emulate_edge", "free"), 
+             orderFixationMethod = c("emulate_edge", "force_edge", "free"), 
              variableSel = FALSE, pnsMethod = NULL, pnsModelPars = NULL, pnsSelectionPars = NULL,
              pruning = FALSE, pruneMethod = NULL, pruneModelPars = NULL, pruneSelectionPars = NULL,
              intervData = FALSE, intervMat = NULL,
