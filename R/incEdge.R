@@ -42,8 +42,10 @@ incEdge <- function(X, nodeModelName, nodeModelPars, scoreFunction, maxNumParent
 
     fixedOrdersAdded <- 0L
     # Greedily adding edges
+    i<-0
     while(sum(scoreMat!=-Inf) > 0)
     {
+        i <- i+1
         if (orderFixationMethod == "force_edge" && fixedOrdersAdded < nrow(fixedOrders)){
             fixedOrdersAdded = fixedOrdersAdded + 1L
             ix_max <- fixedOrders[fixedOrdersAdded, , drop=F]
@@ -53,9 +55,10 @@ incEdge <- function(X, nodeModelName, nodeModelPars, scoreFunction, maxNumParent
         
         Adj[ix_max] <- TRUE
         scoreNodes[ix_max[2]] <- scoreNodes[ix_max[2]] + scoreMat[ix_max]
+        
         if(verbose)
         {
-            cat("\n Included edge (from, to) ", ix_max, "\n")
+            cat("\n Included edge (from, to) ", ix_max, ," - ",i," of max. ", i + sum(scoreMat!=-Inf) ,"\n")
         }
         
         # Do not include the same edge twice.
@@ -139,7 +142,7 @@ computeScoreMatEntry <- function(existingParOfJ, nodeModelName, nodeModelPars, s
 #' @export updateScoreMat
 updateScoreMat <- function(scoreMat, X, nodeModelName, nodeModelPars, scoreFunction, i, j, 
                            scoreNodes, Adj, maxNumParents, intervMat, intervData, verbose = FALSE, 
-                           numCores = 0) {
+                           numCores = 1) {
     # new edge: from i to j
     p <- dim(X)[2]
     existingParOfJ <- which(Adj[,j])
