@@ -60,9 +60,11 @@ test_that("linear runs without errors:", { set.seed(1)
 
 for (nodeModelName in c("gam", "poly", "lmboost")){
     test_that(paste0("with Pruning and variable selection:",nodeModelName), { set.seed(1)
+        expect_output(CAM(X, nodeModelName = nodeModelName, variableSel = TRUE, pruning = TRUE, verbose=TRUE), regexp=".+")
         expect_equal(trueDAG, CAM(X, nodeModelName = nodeModelName, variableSel = TRUE, pruning = TRUE)$Adj)
     })
 }
+
 test_that("lasso PNS runs without errors:", { set.seed(1)
     CAM(X, pnsMethod = "lasso", variableSel = TRUE)
 })

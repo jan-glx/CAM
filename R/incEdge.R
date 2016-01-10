@@ -58,7 +58,7 @@ incEdge <- function(X, nodeModelName, nodeModelPars, scoreFunction, maxNumParent
         
         if(verbose)
         {
-            cat("\n Included edge (from, to) ", ix_max, ," - ",i," of max. ", i + sum(scoreMat!=-Inf) ,"\n")
+            cat("\n Included edge (from, to) ", ix_max, " - ",i," of max. ", i + sum(scoreMat!=-Inf) ,"\n")
         }
         
         # Do not include the same edge twice.
