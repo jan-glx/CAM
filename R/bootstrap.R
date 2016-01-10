@@ -192,3 +192,38 @@ bootstrap.cam.one_sided_direct <- function(X, B=99, nodeModelName=NULL, nodeMode
     if (!is.null(seed_)) .GlobalEnv$.Random.seed <- seed.bak
     return(list(pvals,stat))
 }
+
+
+
+#' H0: i -/->j
+#' @export
+simulate_bootCAM_null_resampling <- function(X, B=99, parsScore=list(), 
+                                                nodeModelPars =  NULL, verbose= FALSE, seed_=NULL){
+    if (!is.null(seed_)) {seed.bak <- .GlobalEnv$.Random.seed; set.seed(seed_)}
+    
+    mll0 <- fitAllOrders(X, nodeModelPars = nodeModelPars, verbose = verbose)
+    mll0 <- mll0$bestFits[mll0$mll[,.(id=id,ii=ii,jj=jj)],on="id"][,':='(causalOrder=NULL, id=NULL)]
+    mll0[mll0, ':='(rscore=i.score, rlli=i.lli), on=c("ii"="jj","jj"="ii")][,level:=0][,b:=0]
+    
+    res <- rbindlist(mapply(function(null_fit, ii_, jj_) {
+        rbindlist(lapply(seq_len(B), function(b){
+            resid_boot <- residuals(null_fit)
+            resid_boot <- CAM:::colwise_resample(resid_boot)
+            Xboot <- CAM:::fastForward.cam(null_fit, resid_boot)
+            mll1 <- fitAllOrders(Xboot, nodeModelPars = nodeModelPars)
+            mll1 <- mll1$bestFits[mll1$mll[,.(id=id,ii=ii,jj=jj)],on="id"][,':='(causalOrder=NULL, id=NULL)]
+            mll1[mll1, ':='(rscore=i.score, rlli=i.lli), on=c("ii"="jj","jj"="ii")]
+            mll1 <- mll1[ii==ii_][jj==jj_][,level:=1]
+            mll1[,cam:=NULL][, ':='(b=b)]
+        }))
+    }, mll0[,cam], mll0[, ii], mll0[, jj], SIMPLIFY = FALSE))
+    
+    res <- rbind(mll0[,cam:=NULL], res)
+    res[, ':='(llr=score-rscore, sd_llr=mapply(function(lli,rlli) sd(lli-rlli),lli,rlli))]
+    res[, ':='(lli=NULL, rlli=NULL)]
+    res[,z:=llr]
+    res[, ":="(p.value= mean(c(1,z[level==0]-0>= z[level==1]-z[b==0]))), by=.(ii, jj)]
+    
+    if (!is.null(seed_)) .GlobalEnv$.Random.seed <- seed.bak
+    return(res)
+}
