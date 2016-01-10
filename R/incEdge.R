@@ -1,7 +1,7 @@
 
 
 incEdge <- function(X, nodeModelName, nodeModelPars, scoreFunction, maxNumParents, fixedOrders, 
-                    orderFixationMethod, selMat, intervData, intervMat, numCores= 1, verbose = FALSE){
+                    orderFixationMethod, selMat, intervData, intervMat, earlyStop = Inf, numCores= 1, verbose = FALSE){
     
     if (is.list(X)||is.data.frame(X)||is.data.table(X)) setDT(X)
     else X <- as.data.table(X)
@@ -43,7 +43,7 @@ incEdge <- function(X, nodeModelName, nodeModelPars, scoreFunction, maxNumParent
     fixedOrdersAdded <- 0L
     # Greedily adding edges
     i<-0
-    while(sum(scoreMat!=-Inf) > 0)
+    while(sum(scoreMat!=-Inf) > 0 & i <= earlyStop)
     {
         i <- i+1
         if (orderFixationMethod == "force_edge" && fixedOrdersAdded < nrow(fixedOrders)){
@@ -56,9 +56,9 @@ incEdge <- function(X, nodeModelName, nodeModelPars, scoreFunction, maxNumParent
         Adj[ix_max] <- TRUE
         scoreNodes[ix_max[2]] <- scoreNodes[ix_max[2]] + scoreMat[ix_max]
         
-        if(verbose)
-        {
-            cat("\n Included edge (from, to) ", ix_max, " - ",i," of max. ", i + sum(scoreMat!=-Inf) ,"\n")
+        if(verbose) {
+            cat("\n Included edge (from, to) ", ix_max, " - ",i," of max. ", 
+                min(earlyStop, i + sum(scoreMat!=-Inf)) ,"\n")
         }
         
         # Do not include the same edge twice.

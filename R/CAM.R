@@ -94,6 +94,7 @@ CAM <-
              orderFixationMethod = c("emulate_edge", "force_edge", "free"), 
              variableSel = FALSE, pnsMethod = NULL, pnsModelPars = NULL, pnsSelectionPars = NULL,
              pruning = FALSE, pruneMethod = NULL, pruneModelPars = NULL, pruneSelectionPars = NULL,
+             earlyStop = Inf,
              intervData = FALSE, intervMat = NULL,
              numCores = 1, verbose = FALSE) {
 
@@ -128,7 +129,8 @@ CAM <-
     cam <- incEdge(X, nodeModelName = nodeModelName, nodeModelPars = nodeModelPars,
                    scoreFunction = scoreFunction, maxNumParents = maxNumParents,
                    fixedOrders = fixedOrders, orderFixationMethod = orderFixationMethod, 
-                   selMat=selMat, intervData = intervData, intervMat = intervMat, 
+                   selMat = selMat, intervData = intervData, intervMat = intervMat, 
+                   earlyStop = earlyStop,
                    numCores = numCores, verbose = verbose)
     
     # STEP 3: Prune the DAG ------------------------------------------------------------------------
