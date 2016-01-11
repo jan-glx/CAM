@@ -1,5 +1,7 @@
 quick <- Sys.getenv("USERNAME") != "jan" && FALSE
 
+library(testthat)
+
 are_causal_orders_compatible_to <- function(trueDAG) {
     s_trueDAG <- substitute(trueDAG)
     function(estDAG) {
@@ -180,3 +182,34 @@ test_that("direct bootstrap test one-sided V(3) works", {
     dt[(ii==1 & jj==3)|(ii==2 & jj==3), true:=FALSE]
     expect_true(all(dt[, xor(p.value<=0.05,true)]))
 })
+
+context("edge cases")
+set.seed(1)
+n <- 19
+eps1<-rnorm(n)
+eps2<-rnorm(n)
+eps3<-rnorm(n)
+eps4<-rnorm(n)
+
+x2 <- 0.5*eps2
+x1 <- 0.9*sign(x2)*(abs(x2)^(0.5))+0.5*eps1
+x3 <- 0.8*x2^2+0.5*eps3
+x4 <- -0.9*sin(x3) - abs(x1) + 0.5*eps4
+
+X <- cbind(x1,x2,x3,x4)
+
+trueDAG <- edges2adj(i=c(3, 2, 2, 1),
+                     j=c(4, 3, 1, 4)) 
+## x4 <- x3 <- x2 -> x1 
+##  ^               /
+##   \_____________/
+## adjacency matrix:
+## 0 0 0 1
+## 1 0 1 0
+## 0 0 0 1
+## 0 0 0 0
+for (nodeModelName in c("gam", "poly", "lmboost")){
+    test_that(paste0("low n - basic:",nodeModelName), { set.seed(1)
+        expect_true({CAM(X, nodeModelName = nodeModelName);TRUE})
+    })
+}
