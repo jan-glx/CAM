@@ -27,4 +27,4 @@ Repository: CRAN
 Date/Publication: 2015-03-05 22:01:05
 Suggests:
     testthat
-RoxygenNote: 5.0.1
+RoxygenNote: 7.1.0

@@ -4,14 +4,28 @@
 \alias{CAM}
 \title{Causal Additive Model}
 \usage{
-CAM(X, nodeModelName = c("gam", "lasso", "poly", "linear", "lmboost"),
-  scoreFunction = logLik, nodeModelPars = NULL, maxNumParents = ncol(X) -
-  1, fixedOrders = matrix(ncol = 2, nrow = 0),
+CAM(
+  X,
+  nodeModelName = c("gam", "lasso", "poly", "linear", "lmboost"),
+  scoreFunction = logLik,
+  nodeModelPars = NULL,
+  maxNumParents = min(ncol(X) - 1, floor((nrow(X) - 1)/9)),
+  fixedOrders = matrix(ncol = 2, nrow = 0),
   orderFixationMethod = c("emulate_edge", "force_edge", "free"),
-  variableSel = FALSE, pnsMethod = NULL, pnsModelPars = NULL,
-  pnsSelectionPars = NULL, pruning = FALSE, pruneMethod = NULL,
-  pruneModelPars = NULL, pruneSelectionPars = NULL, earlyStop = Inf,
-  intervData = FALSE, intervMat = NULL, numCores = 1, verbose = FALSE)
+  variableSel = FALSE,
+  pnsMethod = NULL,
+  pnsModelPars = NULL,
+  pnsSelectionPars = NULL,
+  pruning = FALSE,
+  pruneMethod = NULL,
+  pruneModelPars = NULL,
+  pruneSelectionPars = NULL,
+  earlyStop = Inf,
+  intervData = FALSE,
+  intervMat = NULL,
+  numCores = 1,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{X}{nxp matrix of training inputs (n data points, p dimensions)}
@@ -102,21 +116,21 @@ trueDAG <- cbind(c(0,1,0,0),c(0,0,0,0),c(0,1,0,0),c(1,0,1,0))
 
 estDAG <- CAM(X, pruning = TRUE)
 
-cat("true DAG:\\n")
+cat("true DAG:\n")
 show(trueDAG)
 
-cat("estimated DAG:\\n")
+cat("estimated DAG:\n")
 show(estDAG$Adj)
 
-}
-\author{
-Jonas Peters <jonas.peters@tuebingen.mpg.de> and Jan Ernest
-<ernest@stat.math.ethz.ch>
 }
 \references{
 P. B\"uhlmann, J. Peters, J. Ernest: CAM: Causal Additive
 Models, high-dimensional Order Search and Penalized Regression Annals of
 Statistics 42:2526-2556, 2014.
+}
+\author{
+Jonas Peters <jonas.peters@tuebingen.mpg.de> and Jan Ernest
+<ernest@stat.math.ethz.ch>
 }
 \keyword{Additive}
 \keyword{Causality}
@@ -127,4 +141,3 @@ Statistics 42:2526-2556, 2014.
 \keyword{Regression}
 \keyword{Restricted}
 \keyword{Structural}
-

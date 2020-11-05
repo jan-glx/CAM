@@ -5,9 +5,22 @@
 \title{auxiliary file for CAM: Updates the score matrix after having added edge i
 -> j to the graph.}
 \usage{
-updateScoreMat(scoreMat, X, nodeModelName, nodeModelPars, scoreFunction, i, j,
-  scoreNodes, Adj, maxNumParents, intervMat, intervData, verbose = FALSE,
-  numCores = 1)
+updateScoreMat(
+  scoreMat,
+  X,
+  nodeModelName,
+  nodeModelPars,
+  scoreFunction,
+  i,
+  j,
+  scoreNodes,
+  Adj,
+  maxNumParents,
+  intervMat,
+  intervData,
+  verbose = FALSE,
+  numCores = 1
+)
 }
 \arguments{
 \item{scoreMat}{the current score matrix that has to be updated}
@@ -54,10 +67,6 @@ auxiliary file for CAM: Updates the score matrix after having added edge i
 \note{
 This is an auxiliary file for CAM.
 }
-\author{
-J. Peters (jonas.peters@tuebingen.mpg.de) and J. Ernest
-(ernest@stat.math.ethz.ch)
-}
 \references{
 P. B\"uhlmann, J. Peters, J. Ernest: CAM: Causal Additive
 Models, high-dimensional Order Search and Penalized Regression Annals of
@@ -66,4 +75,7 @@ Statistics 42:2526-2556, 2014.
 \seealso{
 \code{\link[CAM]{CAM}}
 }
-
+\author{
+J. Peters (jonas.peters@tuebingen.mpg.de) and J. Ernest
+(ernest@stat.math.ethz.ch)
+}

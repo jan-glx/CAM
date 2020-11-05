@@ -4,9 +4,18 @@
 \alias{bootstrap.cam}
 \title{Bootstrap!}
 \usage{
-bootstrap.cam(X, fixedOrders, B = 100, nodeModelName = NULL,
-  parametric = FALSE, bootstrapH02 = FALSE, fast_double = FALSE,
-  nodeModelPars = NULL, verbose = 0, method = NULL)
+bootstrap.cam(
+  X,
+  fixedOrders,
+  B = 100,
+  nodeModelName = NULL,
+  parametric = FALSE,
+  bootstrapH02 = FALSE,
+  fast_double = FALSE,
+  nodeModelPars = NULL,
+  verbose = 0,
+  method = NULL
+)
 }
 \arguments{
 \item{method}{either of "two-sided" or "one-sided"}
@@ -25,4 +34,3 @@ X <- simulate_additive_SEM(obj, n=100, seed_=3)
 boot_res <- bootstrap.cam(X, matrix(c(2,1,1,2), nrow=2, byrow = TRUE),B=20) #two-sided null
 boot_res$pvalue
 }
-

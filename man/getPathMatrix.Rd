@@ -13,4 +13,3 @@ is TRUE at the edges of G and FALSE else where}
 \description{
 Compute the path matrix of a graph G from the adjacency matrix of G
 }
-
