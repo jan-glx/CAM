@@ -1,0 +1,86 @@
+---
+title: "getting-started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{getting-started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(CAM)
+```
+
+# simple model fit
+## set-up data
+```{r set-up-data}
+set.seed(1)
+n <- 5000
+eps1 <- rnorm(n)
+eps2 <- rnorm(n)
+eps3 <- rnorm(n)
+eps4 <- rnorm(n)
+
+x2 <- 0.5 * eps2
+x1 <- 0.9 * sign(x2) * (abs(x2) ^ (0.5)) + 0.5 * eps1
+x3 <- 0.8 * x2 ^ 2 + 0.5 * eps3
+x4 <- -0.9 * sin(x3) - abs(x1) + 0.5 * eps4
+
+X <- cbind(x1, x2, x3, x4)
+
+trueDAG <- edges2adj(i = c(3, 2, 2, 1),
+                     j = c(4, 3, 1, 4)) 
+## x4 <- x3 <- x2 -> x1 
+##  ^               /
+##   \_____________/
+## adjacency matrix:
+## 0 0 0 1
+## 1 0 1 0
+## 0 0 0 1
+## 0 0 0 0
+```
+
+## fit CAM
+```{r}
+fit1 <- CAM(X)
+fit1$Adj # fitted DAG
+
+# check if causal ordering of inferred causal DAG is compatible with true causal DAG
+areAllCausalOrdersCompatible(fit1$Adj, trueDAG)
+```
+
+# bootstrap test
+## set-up example DAG
+```{r}
+p=3
+trueDAG <- matrix(FALSE, ncol=p, nrow=p)
+trueDAG[matrix(c(1, 2,
+                 3, 3), ncol=2)] <- TRUE
+## 1 -> 3 <- 2
+trueDAG
+```
+## simulate example data:
+```{r}
+sem_object <- random_additive_polynomial_SEM(trueDAG, seed_ = 5)
+sem_object <- rescale_sem_object(sem_object, seed_ = 4)
+X <- simulate_additive_SEM(sem_object, n = 400, seed_ = 3)
+pairs(X)
+```
+
+## perform bootstrap based tests
+```{r}
+# Test H0: 2 <~/~> 1 (TRUE)
+bootstrap.cam(X, matrix(c(2, 1), ncol=2), B=100, method = "two-sided")$pvalue 
+
+# Test H0: 2 <~/~> 3 (FALSE)
+bootstrap.cam(X, matrix(c(2, 3), ncol=2), B=100, method = "two-sided")$pvalue 
+```
+
+

@@ -26,5 +26,8 @@ NeedsCompilation: no
 Repository: CRAN
 Date/Publication: 2015-03-05 22:01:05
 Suggests:
-    testthat
+    testthat,
+    knitr,
+    rmarkdown
 RoxygenNote: 7.1.0
+VignetteBuilder: knitr
