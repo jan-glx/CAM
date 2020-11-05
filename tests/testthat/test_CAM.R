@@ -2,26 +2,19 @@ quick <- Sys.getenv("USERNAME") != "jan" && FALSE
 
 library(testthat)
 
-are_causal_orders_compatible_to <- function(trueDAG) {
-    s_trueDAG <- substitute(trueDAG)
-    function(estDAG) {
-        s_estDAG <- substitute(estDAG)
-        expectation(areAllCausalOrdersCompatible(estDAG, trueDAG), 
-                    paste("there is a causal order of ", s_estDAG, "\n",
-                          paste(capture.output(estDAG), collapse="\n"),
-                          "\n not compatible with ", s_trueDAG, "\n",
-                          paste(capture.output(trueDAG), collapse="\n")
-                    ),
-                    paste("all orders of", s_estDAG, " are compatible with",  s_trueDAG)
-        )
-    }
-}
-
 expect_causalOrders_compatible_to <- function(object, trueDAG, info = NULL, label = NULL) {
-    if (is.null(label)) {
-        label <- testthat:::find_expr("object")
-    }
-    expect_that(object, are_causal_orders_compatible_to(trueDAG))
+    act <- quasi_label(rlang::enquo(object), label = label, arg = "object")
+    tru <- quasi_label(rlang::enquo(trueDAG), arg = "trueDAG")
+
+    expect(areAllCausalOrdersCompatible(act$val, tru$val), 
+        paste(
+            "there is a causal order of ",  act$lab, "\n",
+            paste(capture.output(act$val), collapse="\n"),
+            "\n not compatible with ", tru$lab, "\n",
+            paste(capture.output(tru$val), collapse="\n")
+        )
+    )
+    invisible(act$val)
 }
 
 context("simple example")
