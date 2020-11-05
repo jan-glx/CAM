@@ -394,7 +394,7 @@ cam.fit <- function(X, causalDAG=NULL, nodeModelName = c("gam", "lasso", "poly",
 predict.cam <- function(object, newdata, ...)
 {
     object$data <- as.data.table(newdata)
-    object$fitted.values <- setDT(lapply(object$nodeModels, predict, object$data))
+    object$fitted.values <- setDT(data.frame(lapply(object$nodeModels, predict, object$data)))
     object$df.residual <- nrow(object$data)
     return(object)
 }
