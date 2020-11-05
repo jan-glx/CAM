@@ -102,7 +102,7 @@ CAM <-
     if (!is.function(nodeModelName)) nodeModelName <- match.arg(nodeModelName)
     if (is.null(nodeModelName)) nodeModelName <- "gam"
     orderFixationMethod <- match.arg(orderFixationMethod)
-    if (class(fixedOrders) == "numeric" && length(fixedOrders) == 2){
+    if (is.numeric(fixedOrders) && length(fixedOrders) == 2){
       fixedOrders <- matrix(as.integer(fixedOrders), nrow=1)
     } else if (is.null(fixedOrders)) {
       fixedOrders <- matrix(ncol=2,nrow=0)
