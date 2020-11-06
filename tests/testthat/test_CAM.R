@@ -94,7 +94,7 @@ test_that("var test positive", { set.seed(1)
     cam_F <- cam.fit(X, estDAG_F) 
     cam_R <- cam.fit(X, estDAG_R)
     
-    expect_less_than(var.test(cam_F, cam_R)$p.value, 0.05)
+    expect_lt(var.test(cam_F, cam_R)$p.value, 0.05)
 })
 
 test_that("var test negative", { set.seed(1)
@@ -104,7 +104,7 @@ test_that("var test negative", { set.seed(1)
     cam_F <- cam.fit(X, estDAG_F) 
     cam_R <- cam.fit(X, estDAG_R)
     
-    expect_more_than(var.test(cam_F, cam_R)$p.value, 0.05)
+    expect_gt(var.test(cam_F, cam_R)$p.value, 0.05)
 })
 
 test_that("slimming works", { set.seed(1)
@@ -134,38 +134,38 @@ pairs(X)
 test_that("bootstrap test two sided V(3)", {
     if (quick) skip("quick")
     boot_res <- bootstrap.cam(X, matrix(c(2,1), ncol=2),B=100, method = "two-sided") 
-    expect_more_than(boot_res$pvalue, 0.05)
+    expect_gt(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam(X, matrix(c(3,1), ncol=2),B=100, method = "two-sided")
-    expect_less_than(boot_res$pvalue, 0.05)
+    expect_lt(boot_res$pvalue, 0.05)
 })
 
 test_that("bootstrap test one-sided V(3)", {
     if (quick) skip("quick")
     skip("not implemented anymore")
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(3,1),ncol=2))
-    expect_more_than(boot_res$pvalue, 0.05)
+    expect_gt(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,2),ncol=2))
-    expect_more_than(boot_res$pvalue, 0.05)
+    expect_gt(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,3),ncol=2))
-    expect_less_than(boot_res$pvalue, 0.05)
+    expect_lt(boot_res$pvalue, 0.05)
 })
 
 test_that("bootstrap test one-sided V(3) lvl0", {
     if (quick) skip("quick")
     skip("not implemented anymore")
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(3,1),ncol=2), bs_lvl0 = TRUE)
-    expect_more_than(boot_res$pvalue, 0.05)
+    expect_gt(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,3),ncol=2), bs_lvl0 = TRUE)
-    expect_less_than(boot_res$pvalue, 0.05)
+    expect_lt(boot_res$pvalue, 0.05)
 })
 
 test_that("bootstrap test one-sided V(3) lvl0", {
     if (quick) skip("quick")
     skip("not implemented anymore")
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(3,1),ncol=2), bs_lvl0 = TRUE)
-    expect_more_than(boot_res$pvalue, 0.05)
+    expect_gt(boot_res$pvalue, 0.05)
     boot_res <- bootstrap.cam.one_sided(X, ij = matrix(c(1,3),ncol=2), bs_lvl0 = TRUE)
-    expect_less_than(boot_res$pvalue, 0.05)
+    expect_lt(boot_res$pvalue, 0.05)
 })
 
 test_that("direct bootstrap test one-sided V(3) works", {
