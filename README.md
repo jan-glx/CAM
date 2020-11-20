@@ -1,4 +1,4 @@
-# Causal Additive Model (CAM) [![Build Status](https://travis-ci.org/jan-glx/CAM.svg)](https://travis-ci.org/jan-glx/CAM) [![codecov.io](http://codecov.io/github/jan-glx/CAM/coverage.svg)](http://codecov.io/github/jan-glx/CAM)
+# Causal Additive Model (CAM) [![Build Status](https://travis-ci.org/jan-glx/CAM.svg)](https://travis-ci.org/jan-glx/CAM) [![codecov](https://codecov.io/gh/jan-glx/CAM/branch/rewrite/graph/badge.svg?token=8RpQfHr7N7)](https://codecov.io/gh/jan-glx/CAM)
 **And R package to infer the causal DAG under the assumtion of an additive model.**
 
 The code takes an n x p data matrix and fits a Causal Additive Model (CAM) for estimating the causal structure of the underlying process. The output is a p x p adjacency matrix (a one in entry (i,j) indicates an edge from i to j). 
